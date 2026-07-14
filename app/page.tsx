@@ -80,8 +80,9 @@ export default function Home() {
               <span className="step-tag">Step 3</span>
               <h3>Invite your friends</h3>
               <p>
-                Send them your party link over Discord or text. They click it,
-                join, and appear in your world. That&apos;s the whole thing.
+                Send them your invite code over Discord or text. They paste it
+                into Craftparty, and appear in your world. That&apos;s the
+                whole thing.
               </p>
             </div>
           </div>
@@ -100,11 +101,12 @@ export default function Home() {
           <p className="eyebrow">Joining</p>
           <h2>Got an invite?</h2>
           <p className="intro">
-            Someone sent you a party link? You&apos;re two minutes from their
-            world. Click the link, grab the tiny joiner app, and it connects
-            you automatically — nothing to configure, no server address to
-            type. Then open Minecraft and the party shows up like a local
-            game.
+            Someone sent you an invite code? You&apos;re two minutes from
+            their world. Download Craftparty, open the{" "}
+            <strong>Join a party</strong> tab, and paste the code — it
+            connects you automatically, no server address to type, no
+            settings to touch. Then open Minecraft and connect to the local
+            address it shows you.
           </p>
         </div>
       </section>
