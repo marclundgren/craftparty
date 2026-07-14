@@ -1,0 +1,13 @@
+{
+  "name": "@craftparty/preflight",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Answers: which Craftparty connection modes will work on this network?",
+  "bin": {
+    "craftparty-preflight": "./src/cli.ts"
+  },
+  "engines": {
+    "node": ">=23.6"
+  }
+}
