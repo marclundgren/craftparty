@@ -24,7 +24,10 @@ export interface HeadscaleHandle {
   stateDir: string;
   cli(args: string[]): Promise<string>;
   /** Create (or reuse) a user and mint a fresh preauth key for it. */
-  createAuthKey(user: string, reusable?: boolean): Promise<string>;
+  createAuthKey(
+    user: string,
+    opts?: { reusable?: boolean; expiration?: string },
+  ): Promise<string>;
   stop(): Promise<number | null>;
 }
 
@@ -123,7 +126,7 @@ export async function startHeadscale(
     url,
     stateDir,
     cli,
-    createAuthKey: async (user, reusable = false) => {
+    createAuthKey: async (user, keyOpts = {}) => {
       let userId: string | null = null;
       try {
         const created = JSON.parse(
@@ -145,9 +148,9 @@ export async function startHeadscale(
           "create",
           "--user",
           userId,
-          `--reusable=${reusable}`,
+          `--reusable=${keyOpts.reusable ?? false}`,
           "--expiration",
-          "1h",
+          keyOpts.expiration ?? "1h",
           "-o",
           "json",
         ]),

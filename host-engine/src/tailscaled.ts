@@ -12,6 +12,11 @@ export interface TailscaledOptions {
   bins: TailscaleBins;
   /** Instance name; state and socket live under vpn/ts-<name>. */
   name: string;
+  /**
+   * Expose a local SOCKS5 proxy on this port. In userspace mode this is how
+   * local apps dial INTO the tailnet (the joiner points Minecraft through it).
+   */
+  socks5Port?: number;
   onLog?: (line: string) => void;
 }
 
@@ -54,6 +59,9 @@ export async function startTailscaled(
       `--socket=${socketPath}`,
       `--statedir=${stateDir}`,
       "--port=0",
+      ...(opts.socks5Port
+        ? [`--socks5-server=localhost:${opts.socks5Port}`]
+        : []),
     ],
     { stdio: ["ignore", "pipe", "pipe"] },
   );
