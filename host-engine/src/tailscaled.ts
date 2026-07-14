@@ -4,6 +4,7 @@ import path from "node:path";
 import { spawn, execFile, type ChildProcess } from "node:child_process";
 import { promisify } from "node:util";
 import { dataDir } from "./platform.ts";
+import { trackChild } from "./pids.ts";
 import type { TailscaleBins } from "./binaries.ts";
 
 const execFileAsync = promisify(execFile);
@@ -65,6 +66,7 @@ export async function startTailscaled(
     ],
     { stdio: ["ignore", "pipe", "pipe"] },
   );
+  trackChild(`tailscaled-${opts.name}`, proc, stateDir);
   for (const stream of [proc.stdout!, proc.stderr!]) {
     stream.setEncoding("utf8");
     stream.on("data", (chunk: string) => {

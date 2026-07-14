@@ -4,6 +4,7 @@ import net from "node:net";
 import path from "node:path";
 import { spawn, type ChildProcess } from "node:child_process";
 import { downloadFile } from "./download.ts";
+import { trackChild } from "./pids.ts";
 import { resolveLatestFabricServer, type FabricServer } from "./versions.ts";
 import { dataDir } from "./platform.ts";
 
@@ -87,6 +88,7 @@ export async function startServer(opts: ServerOptions): Promise<ServerHandle> {
     [`-Xmx${opts.memoryMb ?? 2048}M`, "-jar", jarPath, "nogui"],
     { cwd: worldDir, stdio: ["pipe", "pipe", "pipe"] },
   );
+  trackChild(`minecraft-${opts.worldName}`, proc, jarPath);
 
   const ready = new Promise<void>((resolve, reject) => {
     let done = false;

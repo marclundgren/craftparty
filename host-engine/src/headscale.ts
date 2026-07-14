@@ -4,6 +4,7 @@ import path from "node:path";
 import { spawn, execFile, type ChildProcess } from "node:child_process";
 import { promisify } from "node:util";
 import { dataDir } from "./platform.ts";
+import { trackChild } from "./pids.ts";
 
 const execFileAsync = promisify(execFile);
 
@@ -146,6 +147,7 @@ export async function startHeadscale(
   const proc = spawn(opts.binPath, ["serve", "-c", configPath], {
     stdio: ["ignore", "pipe", "pipe"],
   });
+  trackChild(`headscale-${opts.name ?? "default"}`, proc, configPath);
   let lastLogs: string[] = [];
   for (const stream of [proc.stdout!, proc.stderr!]) {
     stream.setEncoding("utf8");

@@ -7,6 +7,7 @@ import {
   type PartyOptions,
 } from "../../host-engine/src/party.ts";
 import { joinParty, type JoinHandle } from "../../host-engine/src/joiner.ts";
+import { reapStaleChildren } from "../../host-engine/src/pids.ts";
 
 let win: BrowserWindow | null = null;
 let party: PartyHandle | null = null;
@@ -130,6 +131,9 @@ ipcMain.handle("copy", (_event, text: string) => {
 });
 
 app.whenReady().then(() => {
+  reapStaleChildren().then((reaped) => {
+    for (const r of reaped) console.log(`reaped stale child: ${r}`);
+  });
   createWindow();
 
   // Self-test hook: --screenshot=/path/out.png captures the window and exits.
