@@ -6,7 +6,11 @@
  *   FRIEND side: decode invite → own tailscaled joins with the invite's key
  *                → Minecraft status ping through the tailnet
  *
- * Run: node host-engine/src/party-smoke.ts [--verbose]
+ * Run: node host-engine/src/party-smoke.ts [--verbose] [--remote]
+ *
+ * --remote: auto-expose the control plane via UPnP and hand the friend a
+ * PUBLIC http://<public-ip>:<port> control-plane URL (exercises the full
+ * zero-infra remote path; needs a router with hairpin NAT to self-test).
  */
 import net from "node:net";
 import { startParty, decodeInvite } from "./party.ts";
@@ -16,6 +20,7 @@ import { socks5Connect } from "./socks.ts";
 import { minecraftStatus } from "./mc-ping.ts";
 
 const verbose = process.argv.includes("--verbose");
+const remote = process.argv.includes("--remote");
 const t0 = Date.now();
 const log = (msg: string) =>
   console.log(`[${((Date.now() - t0) / 1000).toFixed(1)}s] ${msg}`);
@@ -25,6 +30,7 @@ const party = await startParty({
   worldName: "party-smoke",
   acceptEula: true,
   mode: "independent",
+  remote,
   onPhase: (p) => log(`host: ${p}`),
   onLog: (src, line) => {
     if (verbose) console.log(`    [${src}] ${line}`);
@@ -37,7 +43,9 @@ let friend: Awaited<ReturnType<typeof startTailscaled>> | null = null;
 try {
   // ---- FRIEND ----
   const invite = decodeInvite(party.inviteCode);
-  log(`friend: decoded invite for party "${invite.party}"`);
+  log(
+    `friend: decoded invite for party "${invite.party}" (control plane ${invite.controlPlaneUrl})`,
+  );
 
   const socksPort = await findFreePort(1080);
   friend = await startTailscaled({

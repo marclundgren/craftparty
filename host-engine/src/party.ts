@@ -1,4 +1,5 @@
 import net from "node:net";
+import { exposePort, type Exposure } from "./expose.ts";
 import { ensureJre } from "./jre.ts";
 import { startServer, type ServerHandle } from "./server.ts";
 import { ensureHeadscale, ensureTailscale } from "./binaries.ts";
@@ -37,6 +38,11 @@ export interface PartyOptions {
   acceptEula: boolean;
   mode: ConnectMode;
   /**
+   * Independent mode only: auto-expose the control plane to the internet
+   * via UPnP so remote friends can join. false = LAN/local-only party.
+   */
+  remote?: boolean;
+  /**
    * Assisted mode: credentials for the shared control plane (minted by its
    * party-registration API; that service is built separately).
    */
@@ -66,10 +72,13 @@ export interface PartyHandle {
  * Boot a complete party: control plane (Independent) or shared control
  * plane (Assisted), join the tailnet, start Minecraft, emit the invite.
  *
- * NOTE (Independent mode, current state): the control plane binds locally
- * and the invite carries its local URL — remote friends additionally need
- * the auto-expose layer (UPnP + public URL + TLS), which is a separate,
- * not-yet-built module. The orchestration below is identical either way.
+ * NOTE (Independent mode, current state): remote=false is fully working
+ * (LAN/local). remote=true exposes the control plane via UPnP and is
+ * VERIFIED REACHABLE over the public URL, but the tailscale client
+ * refuses plain-http control planes on non-loopback addresses (it forces
+ * an https dial after the first noise connection), so remote needs the
+ * TLS layer (headscale built-in Let's Encrypt + sslip.io hostname +
+ * external 443 mapping) before it works end to end.
  */
 export async function startParty(opts: PartyOptions): Promise<PartyHandle> {
   const phase = (p: string) => opts.onPhase?.(p);
@@ -87,9 +96,19 @@ export async function startParty(opts: PartyOptions): Promise<PartyHandle> {
     if (opts.mode === "independent") {
       phase("starting control plane");
       const hsBin = await ensureHeadscale();
+      const hsPort = await findFreePort(8091);
+
+      let exposure: Exposure | null = null;
+      if (opts.remote) {
+        phase("opening a door in the router");
+        exposure = await exposePort(hsPort);
+        cleanups.push(() => exposure!.close());
+      }
+
       headscale = await startHeadscale({
         binPath: hsBin.headscale,
-        port: await findFreePort(8091),
+        port: hsPort,
+        serverUrl: exposure?.publicUrl,
         onLog: (l) => opts.onLog?.("headscale", l),
       });
       cleanups.push(() => headscale!.stop());

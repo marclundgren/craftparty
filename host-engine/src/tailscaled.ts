@@ -86,22 +86,25 @@ export async function startTailscaled(
     await new Promise((r) => setTimeout(r, 200));
   }
 
-  const ts = (args: string[]) =>
+  const ts = (args: string[], timeout = 60_000) =>
     execFileAsync(opts.bins.tailscale, [`--socket=${socketPath}`, ...args], {
-      timeout: 60_000,
+      timeout,
     });
 
   return {
     proc,
     socketPath,
     up: async ({ loginServer, authKey, hostname }) => {
-      await ts([
-        "up",
-        `--login-server=${loginServer}`,
-        `--auth-key=${authKey}`,
-        `--hostname=${hostname}`,
-        "--accept-dns=false",
-      ]);
+      await ts(
+        [
+          "up",
+          `--login-server=${loginServer}`,
+          `--auth-key=${authKey}`,
+          `--hostname=${hostname}`,
+          "--accept-dns=false",
+        ],
+        120_000,
+      );
     },
     status: async () => {
       const { stdout } = await ts(["status", "--json"]);
