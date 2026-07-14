@@ -1,0 +1,13 @@
+import { contextBridge, ipcRenderer } from "electron";
+
+contextBridge.exposeInMainWorld("craftparty", {
+  preflight: () => ipcRenderer.invoke("preflight"),
+  startParty: (opts: { worldName: string; acceptEula: boolean; remote: boolean }) =>
+    ipcRenderer.invoke("start-party", opts),
+  stopParty: () => ipcRenderer.invoke("stop-party"),
+  copy: (text: string) => ipcRenderer.invoke("copy", text),
+  onPhase: (cb: (phase: string) => void) =>
+    ipcRenderer.on("phase", (_e, phase) => cb(phase)),
+  onLog: (cb: (source: string, line: string) => void) =>
+    ipcRenderer.on("log", (_e, source, line) => cb(source, line)),
+});

@@ -1,0 +1,19 @@
+{
+  "name": "@craftparty/host-app",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Craftparty — host a private Minecraft world for your friends.",
+  "main": "dist/main.cjs",
+  "scripts": {
+    "build": "esbuild src/main.ts --bundle --platform=node --format=cjs --external:electron --outfile=dist/main.cjs && esbuild src/preload.ts --bundle --platform=node --format=cjs --external:electron --outfile=dist/preload.cjs",
+    "start": "npm run build && electron ."
+  },
+  "devDependencies": {
+    "electron": "^38.1.0",
+    "esbuild": "^0.25.0"
+  },
+  "allowScripts": {
+    "electron@38.8.6": true,
+    "esbuild@0.25.12": true
+  }
+}

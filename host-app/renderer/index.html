@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'" />
+  <title>Craftparty</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <span class="logo">Craftparty</span>
+    <span id="net-status" class="net-status">checking your network…</span>
+  </header>
+
+  <main>
+    <!-- setup -->
+    <section id="setup" class="card">
+      <h1>Host a party</h1>
+      <label for="world-name">Name your world</label>
+      <input id="world-name" type="text" maxlength="32" placeholder="e.g. Dragon Cave" autocomplete="off" />
+
+      <label class="check">
+        <input id="remote" type="checkbox" checked />
+        Friends join over the internet
+      </label>
+      <p id="remote-hint" class="hint"></p>
+
+      <label class="check">
+        <input id="eula" type="checkbox" />
+        I accept the <a href="https://aka.ms/MinecraftEULA" target="_blank" rel="noreferrer">Minecraft EULA</a>
+      </label>
+
+      <button id="start" class="btn btn-primary" disabled>Start my world</button>
+      <p id="setup-error" class="error" hidden></p>
+    </section>
+
+    <!-- starting -->
+    <section id="progress" class="card" hidden>
+      <h1 id="phase">Getting things ready…</h1>
+      <div class="loader"><div class="loader-fill"></div></div>
+      <p class="hint">First time takes a few minutes — Craftparty is downloading everything your world needs.</p>
+    </section>
+
+    <!-- running -->
+    <section id="running" class="card" hidden>
+      <h1><span class="dot"></span> <span id="running-title">Your world is running</span></h1>
+      <p class="hint" id="running-detail"></p>
+
+      <label for="invite">Send this invite to your friends</label>
+      <div class="invite-row">
+        <input id="invite" type="text" readonly />
+        <button id="copy" class="btn btn-secondary">Copy</button>
+      </div>
+      <p class="hint">They paste it into the Craftparty joiner and appear in your world.</p>
+
+      <button id="stop" class="btn btn-danger">Stop the party</button>
+    </section>
+  </main>
+
+  <footer class="ground"></footer>
+  <script src="app.js"></script>
+</body>
+</html>
