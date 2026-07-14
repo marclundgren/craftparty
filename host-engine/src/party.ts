@@ -1,5 +1,5 @@
-import net from "node:net";
 import { exposePort, type Exposure } from "./expose.ts";
+import { findFreePort } from "./net-util.ts";
 import { ensureJre } from "./jre.ts";
 import { startServer, type ServerHandle } from "./server.ts";
 import { ensureHeadscale, ensureTailscale } from "./binaries.ts";
@@ -116,6 +116,7 @@ export async function startParty(opts: PartyOptions): Promise<PartyHandle> {
 
       headscale = await startHeadscale({
         binPath: hsBin.headscale,
+        name: opts.worldName,
         port: hsPort,
         serverUrl,
         tls,
@@ -208,14 +209,3 @@ async function waitForTailnetIp(vpn: TailscaledHandle): Promise<string> {
   }
 }
 
-async function findFreePort(start: number): Promise<number> {
-  for (let port = start; port < start + 100; port++) {
-    const free = await new Promise<boolean>((resolve) => {
-      const srv = net.createServer();
-      srv.once("error", () => resolve(false));
-      srv.listen(port, "0.0.0.0", () => srv.close(() => resolve(true)));
-    });
-    if (free) return port;
-  }
-  throw new Error("No free port found");
-}

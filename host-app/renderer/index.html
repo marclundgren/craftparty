@@ -12,6 +12,11 @@
     <span id="net-status" class="net-status">checking your network…</span>
   </header>
 
+  <nav class="tabs">
+    <button id="tab-host" class="tab active">Host a party</button>
+    <button id="tab-join" class="tab">Join a party</button>
+  </nav>
+
   <main>
     <!-- setup -->
     <section id="setup" class="card">
@@ -46,14 +51,50 @@
       <h1><span class="dot"></span> <span id="running-title">Your world is running</span></h1>
       <p class="hint" id="running-detail"></p>
 
-      <label for="invite">Send this invite to your friends</label>
+      <label for="host-address">Start playing — in Minecraft: Multiplayer → Direct Connection</label>
+      <div class="invite-row">
+        <input id="host-address" type="text" readonly />
+        <button id="copy-host-address" class="btn btn-secondary">Copy</button>
+      </div>
+      <p class="hint">You can hop in right away — no need to wait for your friends.</p>
+
+      <label for="invite">Invite your friends</label>
       <div class="invite-row">
         <input id="invite" type="text" readonly />
         <button id="copy" class="btn btn-secondary">Copy</button>
       </div>
-      <p class="hint">They paste it into the Craftparty joiner and appear in your world.</p>
+      <p class="hint">Send this to them however you like — they paste it into Craftparty's "Join a party" tab and appear in your world.</p>
 
       <button id="stop" class="btn btn-danger">Stop the party</button>
+    </section>
+
+    <!-- join: setup -->
+    <section id="join-setup" class="card" hidden>
+      <h1>Join a party</h1>
+      <label for="invite-input">Paste the invite your friend sent you</label>
+      <textarea id="invite-input" rows="4" spellcheck="false" placeholder="eyJ2IjoxLCJwYXJ0eSI6..."></textarea>
+      <button id="join" class="btn btn-primary" disabled>Join the party</button>
+      <p id="join-error" class="error" hidden></p>
+    </section>
+
+    <!-- join: progress -->
+    <section id="join-progress" class="card" hidden>
+      <h1 id="join-phase">Connecting…</h1>
+      <div class="loader"><div class="loader-fill"></div></div>
+      <p class="hint">Hang tight — connecting you to your friend's world.</p>
+    </section>
+
+    <!-- join: connected -->
+    <section id="join-running" class="card" hidden>
+      <h1><span class="dot"></span> You're in!</h1>
+      <p class="hint" id="join-detail"></p>
+      <label for="join-address">In Minecraft: Multiplayer → Direct Connection</label>
+      <div class="invite-row">
+        <input id="join-address" type="text" readonly />
+        <button id="copy-address" class="btn btn-secondary">Copy</button>
+      </div>
+      <p class="hint">Keep Craftparty open while you play.</p>
+      <button id="leave" class="btn btn-danger">Leave the party</button>
     </section>
   </main>
 

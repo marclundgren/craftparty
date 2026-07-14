@@ -5,6 +5,8 @@ contextBridge.exposeInMainWorld("craftparty", {
   startParty: (opts: { worldName: string; acceptEula: boolean; remote: boolean }) =>
     ipcRenderer.invoke("start-party", opts),
   stopParty: () => ipcRenderer.invoke("stop-party"),
+  joinParty: (inviteCode: string) => ipcRenderer.invoke("join-party", inviteCode),
+  leaveParty: () => ipcRenderer.invoke("leave-party"),
   copy: (text: string) => ipcRenderer.invoke("copy", text),
   onPhase: (cb: (phase: string) => void) =>
     ipcRenderer.on("phase", (_e, phase) => cb(phase)),

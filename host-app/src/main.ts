@@ -6,10 +6,27 @@ import {
   type PartyHandle,
   type PartyOptions,
 } from "../../host-engine/src/party.ts";
+import { joinParty, type JoinHandle } from "../../host-engine/src/joiner.ts";
 
 let win: BrowserWindow | null = null;
 let party: PartyHandle | null = null;
+let joined: JoinHandle | null = null;
 let starting = false;
+
+// Self-test instances need isolated Chromium profiles (two app instances
+// otherwise deadlock on the shared userData singleton lock) and no GPU.
+const selftestRole = process.argv.some((a) => a.startsWith("--selftest-host="))
+  ? "host"
+  : process.argv.some((a) => a.startsWith("--selftest-join="))
+    ? "join"
+    : null;
+if (selftestRole) {
+  app.setPath(
+    "userData",
+    path.join(app.getPath("temp"), `craftparty-selftest-${selftestRole}`),
+  );
+  app.disableHardwareAcceleration();
+}
 
 function createWindow() {
   win = new BrowserWindow({
@@ -78,6 +95,32 @@ ipcMain.handle("stop-party", async () => {
   if (!party) return { ok: true };
   await party.stop();
   party = null;
+  return { ok: true };
+});
+
+ipcMain.handle("join-party", async (_event, inviteCode: string) => {
+  console.log(
+    `join-party invoked (joined=${!!joined} starting=${starting}) invite=${inviteCode.slice(0, 12)}…`,
+  );
+  if (joined || starting) return { error: "Already connected to a party." };
+  starting = true;
+  try {
+    joined = await joinParty(inviteCode, {
+      onPhase: (phase) => send("phase", phase),
+      onLog: (source, line) => send("log", source, line),
+    });
+    return { localPort: joined.localPort, partyName: joined.invite.party };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : String(err) };
+  } finally {
+    starting = false;
+  }
+});
+
+ipcMain.handle("leave-party", async () => {
+  if (!joined) return { ok: true };
+  await joined.stop();
+  joined = null;
   return { ok: true };
 });
 
@@ -172,7 +215,125 @@ app.whenReady().then(() => {
   }
 });
 
+// Dual-instance UI E2E: --selftest-host=<inviteFile> hosts a party via
+// the real UI and writes the invite code to a file; --selftest-join=<same
+// file> pastes it into the Join tab, waits for the connected screen, then
+// verifies an actual Minecraft status ping through the joiner's proxy.
+function armDualSelftest() {
+  const hostArg = process.argv.find((a) => a.startsWith("--selftest-host="));
+  const joinArg = process.argv.find((a) => a.startsWith("--selftest-join="));
+  if (!hostArg && !joinArg) return;
+  const file = (hostArg ?? joinArg)!.split("=")[1];
+  const page = () => win!.webContents;
+  const poll = async <T>(
+    ms: number,
+    fn: () => Promise<T | null>,
+  ): Promise<T> => {
+    const deadline = Date.now() + ms;
+    for (;;) {
+      const v = await fn();
+      if (v) return v;
+      if (Date.now() > deadline) throw new Error("selftest poll timeout");
+      await new Promise((r) => setTimeout(r, 2000));
+    }
+  };
+
+  setTimeout(async () => {
+    const fs = await import("node:fs/promises");
+    const fss = await import("node:fs");
+    try {
+      if (hostArg) {
+        await page().executeJavaScript(`(() => {
+          const name = document.getElementById("world-name");
+          name.value = "Selftest Duo";
+          name.dispatchEvent(new Event("input"));
+          const eula = document.getElementById("eula");
+          eula.checked = true;
+          eula.dispatchEvent(new Event("change"));
+          const remote = document.getElementById("remote");
+          if (!remote.disabled) remote.checked = false;
+          document.getElementById("start").click();
+        })()`);
+        const invite = await poll(8 * 60_000, async () => {
+          const s = await page().executeJavaScript(
+            `({ running: !document.getElementById("running").hidden,
+                invite: document.getElementById("invite").value })`,
+          );
+          return s.running && s.invite ? (s.invite as string) : null;
+        });
+        await fs.writeFile(file, invite);
+        console.log("selftest-host: party up, invite written");
+        await poll(8 * 60_000, async () =>
+          fss.existsSync(`${file}.done`) ? true : null,
+        );
+        await page().executeJavaScript(
+          `document.getElementById("stop").click()`,
+        );
+        await new Promise((r) => setTimeout(r, 3000));
+        console.log("selftest-host: OK");
+        app.exit(0);
+      } else {
+        const invite = await poll(3 * 60_000, async () =>
+          fss.existsSync(file) ? await fs.readFile(file, "utf8") : null,
+        );
+        // pass the invite safely via a JSON-escaped global, then drive the form
+        await page().executeJavaScript(
+          `window.__invite = ${JSON.stringify(invite.trim())}; (() => {
+            document.getElementById("tab-join").click();
+            const input = document.getElementById("invite-input");
+            input.value = window.__invite;
+            input.dispatchEvent(new Event("input"));
+            document.getElementById("join").click();
+          })()`,
+        );
+        const address = await poll(5 * 60_000, async () => {
+          const s = await page().executeJavaScript(
+            `({ connected: !document.getElementById("join-running").hidden,
+                address: document.getElementById("join-address").value,
+                error: document.getElementById("join-error").textContent })`,
+          );
+          if (s.error) throw new Error(`join failed: ${s.error}`);
+          return s.connected && s.address ? (s.address as string) : null;
+        });
+        const port = Number(address.split(":")[1]);
+        const net = await import("node:net");
+        const { minecraftStatus } = await import(
+          "../../host-engine/src/mc-ping.ts"
+        );
+        const socket = net.connect({ host: "127.0.0.1", port });
+        await new Promise<void>((resolve, reject) => {
+          socket.once("connect", resolve);
+          socket.once("error", reject);
+        });
+        const status = await minecraftStatus(socket, "127.0.0.1", port);
+        socket.destroy();
+        console.log(
+          `selftest-join: Minecraft answered ${status.version?.name} on ${address}`,
+        );
+        const image = await page().capturePage();
+        await fs.writeFile(`${file}-join.png`, image.toPNG());
+        await page().executeJavaScript(
+          `document.getElementById("leave").click()`,
+        );
+        await new Promise((r) => setTimeout(r, 2000));
+        await fs.writeFile(`${file}.done`, "ok");
+        console.log("selftest-join: OK");
+        app.exit(0);
+      }
+    } catch (err) {
+      console.error(
+        `selftest ${hostArg ? "host" : "join"}: FAILED —`,
+        err instanceof Error ? err.message : err,
+      );
+      app.exit(1);
+    }
+  }, 5000);
+}
+
+app.whenReady().then(armDualSelftest);
+
 app.on("window-all-closed", async () => {
   if (party) await party.stop().catch(() => {});
+  if (joined) await joined.stop().catch(() => {});
   app.quit();
 });

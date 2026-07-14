@@ -4,6 +4,11 @@ const $ = (id) => document.getElementById(id);
 const setup = $("setup");
 const progress = $("progress");
 const running = $("running");
+const joinSetup = $("join-setup");
+const joinProgress = $("join-progress");
+const joinRunning = $("join-running");
+const HOST_SECTIONS = [setup, progress, running];
+const JOIN_SECTIONS = [joinSetup, joinProgress, joinRunning];
 const netStatus = $("net-status");
 const worldName = $("world-name");
 const remote = $("remote");
@@ -15,8 +20,24 @@ const setupError = $("setup-error");
 let netVerdict = null;
 
 function show(section) {
-  for (const s of [setup, progress, running]) s.hidden = s !== section;
+  for (const s of [...HOST_SECTIONS, ...JOIN_SECTIONS]) {
+    s.hidden = s !== section;
+  }
+  const joining = JOIN_SECTIONS.includes(section);
+  $("tab-join").classList.toggle("active", joining);
+  $("tab-host").classList.toggle("active", !joining);
 }
+
+// ---- tabs (disabled while something is running) ----
+let hostSection = setup;
+let joinSection = joinSetup;
+$("tab-host").addEventListener("click", () => show(hostSection));
+$("tab-join").addEventListener("click", () => show(joinSection));
+const rememberSection = (section) => {
+  if (HOST_SECTIONS.includes(section)) hostSection = section;
+  else joinSection = section;
+  show(section);
+};
 
 function refreshStartEnabled() {
   startBtn.disabled = !(worldName.value.trim() && eula.checked);
@@ -26,18 +47,22 @@ worldName.addEventListener("input", refreshStartEnabled);
 eula.addEventListener("change", refreshStartEnabled);
 
 craftparty.onPhase((phase) => {
-  $("phase").textContent = friendlyPhase(phase);
+  const friendly = friendlyPhase(phase);
+  $("phase").textContent = friendly;
+  $("join-phase").textContent = friendly;
 });
 
 function friendlyPhase(phase) {
   const map = {
-    "fetching runtimes": "Downloading what your world needs…",
+    "fetching runtimes": "Downloading what's needed…",
     "starting control plane": "Building your private network…",
     "opening a door in the router": "Asking your router to let friends in…",
     "getting a certificate (first time can take a minute)":
       "Securing your connection (can take a minute)…",
     "joining private network": "Joining your private network…",
     "starting Minecraft": "Starting Minecraft…",
+    "joining the party network": "Joining your friend's private network…",
+    "connecting to the world": "Connecting to the world…",
     ready: "Almost there…",
   };
   return map[phase] ?? phase;
@@ -72,23 +97,24 @@ function friendlyPhase(phase) {
 // ---- start ----
 startBtn.addEventListener("click", async () => {
   setupError.hidden = true;
-  show(progress);
+  rememberSection(progress);
   const result = await craftparty.startParty({
     worldName: worldName.value.trim(),
     acceptEula: eula.checked,
     remote: remote.checked,
   });
   if (result.error) {
-    show(setup);
+    rememberSection(setup);
     setupError.textContent = result.error;
     setupError.hidden = false;
     return;
   }
   $("invite").value = result.inviteCode;
+  $("host-address").value = `localhost:${result.port}`;
   $("running-detail").textContent = result.remote
     ? "Friends anywhere on the internet can join with your invite."
     : "Friends on your home network can join with your invite.";
-  show(running);
+  rememberSection(running);
 });
 
 // ---- copy ----
@@ -98,10 +124,53 @@ $("copy").addEventListener("click", async () => {
   setTimeout(() => ($("copy").textContent = "Copy"), 1500);
 });
 
+$("copy-host-address").addEventListener("click", async () => {
+  await craftparty.copy($("host-address").value);
+  $("copy-host-address").textContent = "Copied!";
+  setTimeout(() => ($("copy-host-address").textContent = "Copy"), 1500);
+});
+
 // ---- stop ----
 $("stop").addEventListener("click", async () => {
   $("stop").disabled = true;
   await craftparty.stopParty();
   $("stop").disabled = false;
-  show(setup);
+  rememberSection(setup);
+});
+
+// ---- join flow ----
+const inviteInput = $("invite-input");
+const joinBtn = $("join");
+const joinError = $("join-error");
+
+inviteInput.addEventListener("input", () => {
+  joinBtn.disabled = !inviteInput.value.trim();
+});
+
+joinBtn.addEventListener("click", async () => {
+  joinError.hidden = true;
+  rememberSection(joinProgress);
+  const result = await craftparty.joinParty(inviteInput.value.trim());
+  if (result.error) {
+    rememberSection(joinSetup);
+    joinError.textContent = result.error;
+    joinError.hidden = false;
+    return;
+  }
+  $("join-address").value = `localhost:${result.localPort}`;
+  $("join-detail").textContent = `You're connected to "${result.partyName}".`;
+  rememberSection(joinRunning);
+});
+
+$("copy-address").addEventListener("click", async () => {
+  await craftparty.copy($("join-address").value);
+  $("copy-address").textContent = "Copied!";
+  setTimeout(() => ($("copy-address").textContent = "Copy"), 1500);
+});
+
+$("leave").addEventListener("click", async () => {
+  $("leave").disabled = true;
+  await craftparty.leaveParty();
+  $("leave").disabled = false;
+  rememberSection(joinSetup);
 });

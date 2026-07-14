@@ -49,12 +49,54 @@ body {
   padding: 0.25rem 0.75rem;
 }
 
+.tabs {
+  display: flex;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 0.2rem 1rem 0;
+}
+
+.tab {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.5);
+  border: 2px solid transparent;
+  border-radius: 999px;
+  padding: 0.45rem 1.1rem;
+  cursor: pointer;
+}
+
+.tab.active {
+  background: var(--paper);
+  border-color: #e4dcc8;
+  box-shadow: 3px 3px 0 rgba(34, 50, 60, 0.12);
+}
+
 main {
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 1rem;
+}
+
+textarea {
+  width: 100%;
+  font-family: ui-monospace, monospace;
+  font-size: 0.82rem;
+  padding: 0.6rem 0.75rem;
+  border: 2px solid #d8cfb8;
+  border-radius: 4px;
+  background: #fff;
+  color: var(--ink);
+  resize: vertical;
+}
+
+textarea:focus {
+  outline: 3px solid var(--torch);
+  outline-offset: 1px;
+  border-color: var(--torch);
 }
 
 .card {

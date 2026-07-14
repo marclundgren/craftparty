@@ -49,6 +49,12 @@ export interface HeadscaleOptions {
   /** Port for the control-plane listener. */
   port: number;
   /**
+   * Instance name; state lives under vpn/headscale-<name>. Distinct names
+   * let multiple parties/app instances coexist without dueling over one
+   * sqlite database and config file.
+   */
+  name?: string;
+  /**
    * URL clients will use to reach this control plane. Defaults to the local
    * listener; Independent mode passes the auto-exposed public URL instead.
    */
@@ -78,20 +84,26 @@ export interface HeadscaleHandle {
 export async function startHeadscale(
   opts: HeadscaleOptions,
 ): Promise<HeadscaleHandle> {
-  const stateDir = path.join(dataDir(), "vpn", "headscale-state");
+  const stateDir = path.join(
+    dataDir(),
+    "vpn",
+    `headscale-${(opts.name ?? "default").toLowerCase().replace(/[^a-z0-9-]/g, "-")}`,
+  );
   await fsp.mkdir(stateDir, { recursive: true });
   const url = opts.serverUrl ?? `http://127.0.0.1:${opts.port}`;
   const configPath = path.join(stateDir, "config.yaml");
 
   // Separate cert caches per CA — a cached staging cert must never be
-  // served when running against the production CA.
+  // served when running against the production CA. The cache is SHARED
+  // across instances (not per-world) so certs are never re-issued per
+  // party: Let's Encrypt rate limits are real.
   const caSlug = opts.tls?.acmeUrl
     ? new URL(opts.tls.acmeUrl).hostname.replace(/[^a-z0-9.-]/gi, "_")
     : "prod";
   const tlsLines = opts.tls
     ? [
         `tls_letsencrypt_hostname: ${opts.tls.hostname}`,
-        `tls_letsencrypt_cache_dir: ${path.join(stateDir, `letsencrypt-${caSlug}`)}`,
+        `tls_letsencrypt_cache_dir: ${path.join(dataDir(), "vpn", `letsencrypt-${caSlug}`)}`,
         `tls_letsencrypt_challenge_type: TLS-ALPN-01`,
         ...(opts.tls.acmeUrl ? [`acme_url: ${opts.tls.acmeUrl}`] : []),
       ]
