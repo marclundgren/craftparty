@@ -1,0 +1,10 @@
+{
+  "name": "@craftparty/host-engine",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Headless engine for the Craftparty host app: downloads runtimes and manages the Minecraft server + VPN as native child processes.",
+  "engines": {
+    "node": ">=23.6"
+  }
+}
