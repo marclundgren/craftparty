@@ -43,3 +43,4 @@ next-env.d.ts
 # host-app
 host-app/node_modules/
 host-app/dist/
+host-app/release/

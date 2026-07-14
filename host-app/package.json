@@ -6,14 +6,55 @@
   "main": "dist/main.cjs",
   "scripts": {
     "build": "esbuild src/main.ts --bundle --platform=node --format=cjs --external:electron --outfile=dist/main.cjs && esbuild src/preload.ts --bundle --platform=node --format=cjs --external:electron --outfile=dist/preload.cjs",
-    "start": "npm run build && electron ."
+    "start": "npm run build && electron .",
+    "dist": "npm run build && electron-builder --publish never"
   },
   "devDependencies": {
     "electron": "^38.1.0",
+    "electron-builder": "^26.15.3",
     "esbuild": "^0.25.0"
   },
   "allowScripts": {
     "electron@38.8.6": true,
-    "esbuild@0.25.12": true
+    "esbuild@0.25.12": true,
+    "electron-builder@26.15.3": true
+  },
+  "build": {
+    "appId": "io.github.marclundgren.craftparty",
+    "productName": "Craftparty",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**",
+      "renderer/**",
+      "package.json"
+    ],
+    "asar": true,
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "artifactName": "Craftparty-Setup.${ext}"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false
+    },
+    "mac": {
+      "target": [
+        "dmg"
+      ],
+      "category": "public.app-category.games",
+      "artifactName": "Craftparty.${ext}"
+    },
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "category": "Game",
+      "artifactName": "Craftparty.${ext}"
+    },
+    "executableName": "craftparty"
   }
 }

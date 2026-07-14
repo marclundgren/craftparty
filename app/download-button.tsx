@@ -2,9 +2,14 @@
 
 import { useEffect, useState } from "react";
 
-// The host app doesn't ship yet — point at the kit's releases page for now.
-export const RELEASES_URL =
-  "https://github.com/marclundgren/craftparty-kit/releases";
+const RELEASE_BASE =
+  "https://github.com/marclundgren/craftparty/releases/latest";
+export const RELEASES_URL = RELEASE_BASE;
+
+const DIRECT: Record<string, string> = {
+  Windows: `${RELEASE_BASE}/download/Craftparty-Setup.exe`,
+  Mac: `${RELEASE_BASE}/download/Craftparty.dmg`,
+};
 
 export default function DownloadButton() {
   const [os, setOs] = useState<"Windows" | "Mac" | null>(null);
@@ -16,8 +21,8 @@ export default function DownloadButton() {
   }, []);
 
   return (
-    <a className="btn btn-primary" href={RELEASES_URL}>
-      {os ? `Host a party — ${os}` : "Host a party"}
+    <a className="btn btn-primary" href={os ? DIRECT[os] : RELEASES_URL}>
+      {os ? `Download for ${os}` : "Download Craftparty"}
     </a>
   );
 }

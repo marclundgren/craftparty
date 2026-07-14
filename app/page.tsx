@@ -18,7 +18,7 @@ export default function Home() {
               <a href="#host">How it works</a>
               <a href="#join">Got an invite?</a>
               <a href="#faq">FAQ</a>
-              <a href="https://github.com/marclundgren/craftparty-kit">GitHub</a>
+              <a href="https://github.com/marclundgren/craftparty">GitHub</a>
             </div>
           </nav>
 
@@ -219,7 +219,7 @@ export default function Home() {
         <div className="wrap">
           <div className="links">
             <a href={RELEASES_URL}>Download</a>
-            <a href="https://github.com/marclundgren/craftparty-kit">GitHub</a>
+            <a href="https://github.com/marclundgren/craftparty">GitHub</a>
             <a href="#faq">FAQ</a>
           </div>
           <p className="disclaimer">
