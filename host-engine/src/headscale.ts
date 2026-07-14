@@ -1,4 +1,5 @@
 import fsp from "node:fs/promises";
+import https from "node:https";
 import path from "node:path";
 import { spawn, execFile, type ChildProcess } from "node:child_process";
 import { promisify } from "node:util";
@@ -6,15 +7,58 @@ import { dataDir } from "./platform.ts";
 
 const execFileAsync = promisify(execFile);
 
+/**
+ * Local health check. For TLS we connect to loopback with the public
+ * hostname as SNI and skip chain verification — this is a liveness probe
+ * of our own child process, not a trust decision.
+ */
+function healthOk(port: number, tlsHostname?: string): Promise<boolean> {
+  if (!tlsHostname) {
+    return fetch(`http://127.0.0.1:${port}/health`, {
+      signal: AbortSignal.timeout(1000),
+    })
+      .then((res) => res.ok)
+      .catch(() => false);
+  }
+  return new Promise((resolve) => {
+    const req = https.request(
+      {
+        host: "127.0.0.1",
+        port,
+        path: "/health",
+        servername: tlsHostname,
+        rejectUnauthorized: false,
+        timeout: 3000,
+      },
+      (res) => {
+        res.resume();
+        resolve(res.statusCode === 200);
+      },
+    );
+    req.on("error", () => resolve(false));
+    req.on("timeout", () => {
+      req.destroy();
+      resolve(false);
+    });
+    req.end();
+  });
+}
+
 export interface HeadscaleOptions {
   binPath: string;
-  /** Port for the control-plane HTTP listener. */
+  /** Port for the control-plane listener. */
   port: number;
   /**
    * URL clients will use to reach this control plane. Defaults to the local
    * listener; Independent mode passes the auto-exposed public URL instead.
    */
   serverUrl?: string;
+  /**
+   * Serve TLS with a built-in Let's Encrypt cert (TLS-ALPN-01: the
+   * challenge arrives on the same listener, so external 443 must already
+   * be mapped to `port`). acmeUrl overrides the CA (LE staging in tests).
+   */
+  tls?: { hostname: string; acmeUrl?: string };
   onLog?: (line: string) => void;
 }
 
@@ -39,11 +83,26 @@ export async function startHeadscale(
   const url = opts.serverUrl ?? `http://127.0.0.1:${opts.port}`;
   const configPath = path.join(stateDir, "config.yaml");
 
+  // Separate cert caches per CA — a cached staging cert must never be
+  // served when running against the production CA.
+  const caSlug = opts.tls?.acmeUrl
+    ? new URL(opts.tls.acmeUrl).hostname.replace(/[^a-z0-9.-]/gi, "_")
+    : "prod";
+  const tlsLines = opts.tls
+    ? [
+        `tls_letsencrypt_hostname: ${opts.tls.hostname}`,
+        `tls_letsencrypt_cache_dir: ${path.join(stateDir, `letsencrypt-${caSlug}`)}`,
+        `tls_letsencrypt_challenge_type: TLS-ALPN-01`,
+        ...(opts.tls.acmeUrl ? [`acme_url: ${opts.tls.acmeUrl}`] : []),
+      ]
+    : [];
+
   await fsp.writeFile(
     configPath,
     [
       `server_url: ${url}`,
       `listen_addr: 0.0.0.0:${opts.port}`,
+      ...tlsLines,
       `metrics_listen_addr: ""`,
       `grpc_listen_addr: 127.0.0.1:0`,
       `noise:`,
@@ -87,29 +146,24 @@ export async function startHeadscale(
     });
   }
 
-  // Wait for the health endpoint.
-  const deadline = Date.now() + 30_000;
+  // Wait for the health endpoint. With TLS the first check also triggers
+  // ACME issuance, which takes longer.
+  const startupMs = opts.tls ? 180_000 : 30_000;
+  const deadline = Date.now() + startupMs;
   for (;;) {
     if (proc.exitCode !== null) {
       throw new Error(
         `headscale exited during startup (code ${proc.exitCode}):\n${lastLogs.join("\n")}`,
       );
     }
-    try {
-      const res = await fetch(`http://127.0.0.1:${opts.port}/health`, {
-        signal: AbortSignal.timeout(1000),
-      });
-      if (res.ok) break;
-    } catch {
-      // not up yet
-    }
+    if (await healthOk(opts.port, opts.tls?.hostname)) break;
     if (Date.now() > deadline) {
       proc.kill("SIGTERM");
       throw new Error(
-        `headscale did not become healthy in 30s:\n${lastLogs.join("\n")}`,
+        `headscale did not become healthy in ${startupMs / 1000}s:\n${lastLogs.join("\n")}`,
       );
     }
-    await new Promise((r) => setTimeout(r, 300));
+    await new Promise((r) => setTimeout(r, 500));
   }
 
   const cli = async (args: string[]): Promise<string> => {

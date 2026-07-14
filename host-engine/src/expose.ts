@@ -18,12 +18,21 @@ export interface Exposure {
   close(): Promise<void>;
 }
 
+export interface ExposeOptions {
+  /** External (router) port; defaults to the local port. 443 for TLS. */
+  externalPort?: number;
+}
+
 /**
  * Auto-expose a local TCP port to the internet via UPnP, renewing the lease
  * at half-life. Fails loudly (with the preflight-style reason) when the
  * network can't support it — the caller falls back to Assisted mode.
  */
-export async function exposePort(localPort: number): Promise<Exposure> {
+export async function exposePort(
+  localPort: number,
+  opts: ExposeOptions = {},
+): Promise<Exposure> {
+  const externalPort = opts.externalPort ?? localPort;
   const [gateway, publicIp] = await Promise.all([
     discoverGateway(),
     fetchPublicIp(),
@@ -53,7 +62,7 @@ export async function exposePort(localPort: number): Promise<Exposure> {
 
   const map = () =>
     addPortMapping(gateway, {
-      externalPort: localPort,
+      externalPort,
       internalPort: localPort,
       internalClient,
       protocol: "TCP",
@@ -74,12 +83,12 @@ export async function exposePort(localPort: number): Promise<Exposure> {
   renewTimer.unref();
 
   return {
-    publicUrl: `http://${publicIp}:${localPort}`,
+    publicUrl: `http://${publicIp}:${externalPort}`,
     publicIp,
-    externalPort: localPort,
+    externalPort,
     close: async () => {
       clearInterval(renewTimer);
-      await deletePortMapping(gateway, localPort, "TCP").catch(() => {});
+      await deletePortMapping(gateway, externalPort, "TCP").catch(() => {});
     },
   };
 }

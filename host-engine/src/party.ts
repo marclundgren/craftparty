@@ -99,16 +99,26 @@ export async function startParty(opts: PartyOptions): Promise<PartyHandle> {
       const hsPort = await findFreePort(8091);
 
       let exposure: Exposure | null = null;
+      let tls: { hostname: string; acmeUrl?: string } | undefined;
+      let serverUrl: string | undefined;
       if (opts.remote) {
         phase("opening a door in the router");
-        exposure = await exposePort(hsPort);
+        // The tailscale client requires https for non-loopback control
+        // planes, so remote mode is TLS: external 443 → local port, with
+        // an IP-derived sslip.io hostname and a built-in ACME cert.
+        exposure = await exposePort(hsPort, { externalPort: 443 });
         cleanups.push(() => exposure!.close());
+        const hostname = `${exposure.publicIp.replaceAll(".", "-")}.sslip.io`;
+        tls = { hostname, acmeUrl: process.env.CRAFTPARTY_ACME_URL };
+        serverUrl = `https://${hostname}`;
+        phase("getting a certificate (first time can take a minute)");
       }
 
       headscale = await startHeadscale({
         binPath: hsBin.headscale,
         port: hsPort,
-        serverUrl: exposure?.publicUrl,
+        serverUrl,
+        tls,
         onLog: (l) => opts.onLog?.("headscale", l),
       });
       cleanups.push(() => headscale!.stop());
