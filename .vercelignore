@@ -1,0 +1,6 @@
+# Only the Next.js landing page deploys to Vercel; the desktop app and
+# engine ship via GitHub Releases.
+host-app
+host-engine
+preflight
+.github
