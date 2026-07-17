@@ -1,6 +1,6 @@
 {
   "name": "@craftparty/host-app",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "private": true,
   "description": "Craftparty — host a private Minecraft world for your friends.",
   "main": "dist/main.cjs",
@@ -35,7 +35,7 @@
       "target": [
         "nsis"
       ],
-      "artifactName": "Craftparty-Setup.${ext}"
+      "artifactName": "Craftparty-Setup-${version}.${ext}"
     },
     "nsis": {
       "oneClick": true,
@@ -46,14 +46,14 @@
         "dmg"
       ],
       "category": "public.app-category.games",
-      "artifactName": "Craftparty.${ext}"
+      "artifactName": "Craftparty-${version}.${ext}"
     },
     "linux": {
       "target": [
         "AppImage"
       ],
       "category": "Game",
-      "artifactName": "Craftparty.${ext}"
+      "artifactName": "Craftparty-${version}.${ext}"
     },
     "executableName": "craftparty"
   },
