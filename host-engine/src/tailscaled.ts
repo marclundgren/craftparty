@@ -49,6 +49,9 @@ export async function startTailscaled(
   opts: TailscaledOptions,
 ): Promise<TailscaledHandle> {
   const stateDir = path.join(dataDir(), "vpn", `ts-${opts.name}`);
+  // Fresh state every start: each party mints a fresh auth key anyway, and
+  // profiles left by earlier crashed/failed attempts make login flaky.
+  await fsp.rm(stateDir, { recursive: true, force: true });
   await fsp.mkdir(stateDir, { recursive: true });
   // Windows tailscaled listens on a named pipe, not a filesystem socket.
   const isWindows = process.platform === "win32";
@@ -126,6 +129,11 @@ export async function startTailscaled(
           `--auth-key=${authKey}`,
           `--hostname=${hostname}`,
           "--accept-dns=false",
+          // Windows tailscaled stops the backend whenever the last CLI
+          // connection closes ("client disconnected: disconnecting
+          // Tailscale"), so a status poll would kill the login mid-flight.
+          // Unattended mode keeps the backend running frontend-free.
+          ...(isWindows ? ["--unattended"] : []),
         ],
         120_000,
       );
