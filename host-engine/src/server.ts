@@ -6,6 +6,7 @@ import { spawn, type ChildProcess } from "node:child_process";
 import { downloadFile } from "./download.ts";
 import { trackChild } from "./pids.ts";
 import { resolveLatestFabricServer, type FabricServer } from "./versions.ts";
+import { findFreePort } from "./net-util.ts";
 import { dataDir } from "./platform.ts";
 
 export interface ServerOptions {
@@ -145,19 +146,6 @@ function lineReader(stream: NodeJS.ReadableStream, onLine: (l: string) => void) 
       buf = buf.slice(i + 1);
     }
   });
-}
-
-/** First free TCP port at or above `start` (something else may own 25565). */
-async function findFreePort(start: number): Promise<number> {
-  for (let port = start; port < start + 100; port++) {
-    const free = await new Promise<boolean>((resolve) => {
-      const srv = net.createServer();
-      srv.once("error", () => resolve(false));
-      srv.listen(port, "0.0.0.0", () => srv.close(() => resolve(true)));
-    });
-    if (free) return port;
-  }
-  throw new Error(`No free port found in ${start}–${start + 99}`);
 }
 
 function sanitize(name: string): string {
