@@ -48,10 +48,16 @@ function createWindow() {
   });
   win.setMenuBarVisibility(false);
   win.loadFile(path.join(__dirname, "..", "renderer", "index.html"));
+  win.on("closed", () => {
+    win = null;
+  });
 }
 
+// Engine children keep emitting logs while the app tears them down on
+// quit; sending to a destroyed window throws in the main process.
 const send = (channel: string, ...args: unknown[]) => {
-  win?.webContents.send(channel, ...args);
+  if (!win || win.isDestroyed()) return;
+  win.webContents.send(channel, ...args);
 };
 
 const REPORT_URL = "https://craftparty-ten.vercel.app/api/report";
