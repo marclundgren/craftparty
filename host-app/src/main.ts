@@ -1,5 +1,8 @@
 import { app, BrowserWindow, ipcMain, clipboard } from "electron";
+import os from "node:os";
+import fsp from "node:fs/promises";
 import path from "node:path";
+import { dataDir } from "../../host-engine/src/platform.ts";
 import { probe } from "../../preflight/src/probe.ts";
 import {
   startParty,
@@ -51,6 +54,63 @@ const send = (channel: string, ...args: unknown[]) => {
   win?.webContents.send(channel, ...args);
 };
 
+const REPORT_URL = "https://craftparty-ten.vercel.app/api/report";
+
+/**
+ * Failed starts produce a diagnostic report: saved locally, posted to the
+ * report endpoint (fire-and-forget), and returned to the renderer so the
+ * user can copy it. Contains app/OS versions, the phase reached, the
+ * error, and recent engine logs — no account data.
+ */
+async function reportFailure(
+  kind: "host" | "join",
+  phase: string | null,
+  logs: string[],
+  err: unknown,
+): Promise<{
+  error: string;
+  report: string;
+  reportSent: boolean;
+  reportPath: string | null;
+}> {
+  const error = err instanceof Error ? err.message : String(err);
+  const report = {
+    id: crypto.randomUUID(),
+    ts: new Date().toISOString(),
+    app: app.getVersion(),
+    kind,
+    os: process.platform,
+    arch: process.arch,
+    osRelease: os.release(),
+    phase,
+    error,
+    logs: logs.slice(-150),
+  };
+  const text = JSON.stringify(report, null, 2);
+  let reportPath: string | null = null;
+  try {
+    const dir = path.join(dataDir(), "reports");
+    await fsp.mkdir(dir, { recursive: true });
+    reportPath = path.join(dir, `${report.id}.json`);
+    await fsp.writeFile(reportPath, text);
+  } catch {
+    reportPath = null;
+  }
+  let reportSent = false;
+  try {
+    const res = await fetch(REPORT_URL, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(report),
+      signal: AbortSignal.timeout(8000),
+    });
+    reportSent = res.ok;
+  } catch {
+    reportSent = false;
+  }
+  return { error, report: text, reportSent, reportPath };
+}
+
 ipcMain.handle("preflight", async () => {
   try {
     return await probe({ runMappingTest: false });
@@ -67,14 +127,23 @@ ipcMain.handle(
   ) => {
     if (party || starting) return { error: "A party is already running." };
     starting = true;
+    let phase: string | null = null;
+    const logs: string[] = [];
     try {
       const partyOpts: PartyOptions = {
         worldName: opts.worldName,
         acceptEula: opts.acceptEula,
         mode: "independent",
         remote: opts.remote,
-        onPhase: (phase) => send("phase", phase),
-        onLog: (source, line) => send("log", source, line),
+        onPhase: (p) => {
+          phase = p;
+          send("phase", p);
+        },
+        onLog: (source, line) => {
+          logs.push(`[${source}] ${line}`);
+          if (logs.length > 400) logs.splice(0, logs.length - 400);
+          send("log", source, line);
+        },
       };
       party = await startParty(partyOpts);
       return {
@@ -85,7 +154,7 @@ ipcMain.handle(
         remote: opts.remote,
       };
     } catch (err) {
-      return { error: err instanceof Error ? err.message : String(err) };
+      return await reportFailure("host", phase, logs, err);
     } finally {
       starting = false;
     }
@@ -105,14 +174,23 @@ ipcMain.handle("join-party", async (_event, inviteCode: string) => {
   );
   if (joined || starting) return { error: "Already connected to a party." };
   starting = true;
+  let phase: string | null = null;
+  const logs: string[] = [];
   try {
     joined = await joinParty(inviteCode, {
-      onPhase: (phase) => send("phase", phase),
-      onLog: (source, line) => send("log", source, line),
+      onPhase: (p) => {
+        phase = p;
+        send("phase", p);
+      },
+      onLog: (source, line) => {
+        logs.push(`[${source}] ${line}`);
+        if (logs.length > 400) logs.splice(0, logs.length - 400);
+        send("log", source, line);
+      },
     });
     return { localPort: joined.localPort, partyName: joined.invite.party };
   } catch (err) {
-    return { error: err instanceof Error ? err.message : String(err) };
+    return await reportFailure("join", phase, logs, err);
   } finally {
     starting = false;
   }

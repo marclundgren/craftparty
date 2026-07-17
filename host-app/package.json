@@ -1,6 +1,6 @@
 {
   "name": "@craftparty/host-app",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "private": true,
   "description": "Craftparty — host a private Minecraft world for your friends.",
   "main": "dist/main.cjs",

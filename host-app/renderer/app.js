@@ -68,6 +68,27 @@ function friendlyPhase(phase) {
   return map[phase] ?? phase;
 }
 
+// ---- error reports ----
+// A failed start returns a diagnostic report; tell the user what happened
+// to it and let them copy the details for a bug report.
+function showReport(prefix, result) {
+  const row = $(`${prefix}-report`);
+  if (!result.report) {
+    row.hidden = true;
+    return;
+  }
+  $(`${prefix}-report-note`).textContent = result.reportSent
+    ? "The error details were sent to the developer automatically."
+    : "The details couldn't be sent automatically — please copy and share them.";
+  const btn = $(`${prefix}-copy-report`);
+  btn.onclick = async () => {
+    await craftparty.copy(result.report);
+    btn.textContent = "Copied!";
+    setTimeout(() => (btn.textContent = "Copy error details"), 1500);
+  };
+  row.hidden = false;
+}
+
 // ---- preflight on load ----
 (async () => {
   const report = await craftparty.preflight();
@@ -97,6 +118,7 @@ function friendlyPhase(phase) {
 // ---- start ----
 startBtn.addEventListener("click", async () => {
   setupError.hidden = true;
+  $("setup-report").hidden = true;
   rememberSection(progress);
   const result = await craftparty.startParty({
     worldName: worldName.value.trim(),
@@ -107,6 +129,7 @@ startBtn.addEventListener("click", async () => {
     rememberSection(setup);
     setupError.textContent = result.error;
     setupError.hidden = false;
+    showReport("setup", result);
     return;
   }
   $("invite").value = result.inviteCode;
@@ -149,12 +172,14 @@ inviteInput.addEventListener("input", () => {
 
 joinBtn.addEventListener("click", async () => {
   joinError.hidden = true;
+  $("join-report").hidden = true;
   rememberSection(joinProgress);
   const result = await craftparty.joinParty(inviteInput.value.trim());
   if (result.error) {
     rememberSection(joinSetup);
     joinError.textContent = result.error;
     joinError.hidden = false;
+    showReport("join", result);
     return;
   }
   $("join-address").value = `localhost:${result.localPort}`;

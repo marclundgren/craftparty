@@ -50,8 +50,12 @@ export async function startTailscaled(
 ): Promise<TailscaledHandle> {
   const stateDir = path.join(dataDir(), "vpn", `ts-${opts.name}`);
   await fsp.mkdir(stateDir, { recursive: true });
-  const socketPath = path.join(stateDir, "tailscaled.sock");
-  await fsp.rm(socketPath, { force: true });
+  // Windows tailscaled listens on a named pipe, not a filesystem socket.
+  const isWindows = process.platform === "win32";
+  const socketPath = isWindows
+    ? `\\\\.\\pipe\\craftparty-ts-${opts.name}`
+    : path.join(stateDir, "tailscaled.sock");
+  if (!isWindows) await fsp.rm(socketPath, { force: true });
 
   const proc = spawn(
     opts.bins.tailscaled,
@@ -60,6 +64,7 @@ export async function startTailscaled(
       `--socket=${socketPath}`,
       `--statedir=${stateDir}`,
       "--port=0",
+      "--no-logs-no-support",
       ...(opts.socks5Port
         ? [`--socks5-server=localhost:${opts.socks5Port}`]
         : []),
@@ -67,31 +72,48 @@ export async function startTailscaled(
     { stdio: ["ignore", "pipe", "pipe"] },
   );
   trackChild(`tailscaled-${opts.name}`, proc, stateDir);
+  let lastLogs: string[] = [];
   for (const stream of [proc.stdout!, proc.stderr!]) {
     stream.setEncoding("utf8");
     stream.on("data", (chunk: string) => {
       for (const line of chunk.split("\n")) {
-        if (line.trim()) opts.onLog?.(line);
+        if (!line.trim()) continue;
+        lastLogs = [...lastLogs.slice(-19), line];
+        opts.onLog?.(line);
       }
     });
-  }
-
-  const deadline = Date.now() + 20_000;
-  while (!fs.existsSync(socketPath)) {
-    if (proc.exitCode !== null) {
-      throw new Error(`tailscaled exited during startup (code ${proc.exitCode})`);
-    }
-    if (Date.now() > deadline) {
-      proc.kill("SIGTERM");
-      throw new Error("tailscaled socket did not appear within 20s");
-    }
-    await new Promise((r) => setTimeout(r, 200));
   }
 
   const ts = (args: string[], timeout = 60_000) =>
     execFileAsync(opts.bins.tailscale, [`--socket=${socketPath}`, ...args], {
       timeout,
     });
+
+  // Ready when the CLI can reach the daemon (a named pipe never shows up
+  // via fs, so probing with the CLI is the portable readiness check).
+  const deadline = Date.now() + 20_000;
+  for (;;) {
+    if (proc.exitCode !== null) {
+      throw new Error(
+        `tailscaled exited during startup (code ${proc.exitCode}):\n${lastLogs.join("\n")}`,
+      );
+    }
+    if (isWindows || fs.existsSync(socketPath)) {
+      try {
+        await ts(["status", "--json"], 3000);
+        break;
+      } catch {
+        // daemon not accepting connections yet
+      }
+    }
+    if (Date.now() > deadline) {
+      proc.kill("SIGTERM");
+      throw new Error(
+        `tailscaled did not become reachable within 20s:\n${lastLogs.join("\n")}`,
+      );
+    }
+    await new Promise((r) => setTimeout(r, 300));
+  }
 
   return {
     proc,

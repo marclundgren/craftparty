@@ -1,0 +1,16 @@
+diff --git a/safesocket/pipe_windows.go b/safesocket/pipe_windows.go
+index 0ffee76..b608bb3 100644
+--- a/safesocket/pipe_windows.go
++++ b/safesocket/pipe_windows.go
+@@ -28,7 +28,10 @@ func connect(ctx context.Context, path string) (net.Conn, error) {
+ // windowsSDDL is the Security Descriptor set on the namedpipe.
+ // It provides read/write access to all users and the local system.
+ // It is a var for testing, do not change this value.
+-var windowsSDDL = "O:BAG:BAD:PAI(A;OICI;GWGR;;;BU)(A;OICI;GWGR;;;SY)"
++// Craftparty: empty SDDL uses the creator's default security so an
++// unelevated per-user daemon can own its pipe (upstream's descriptor
++// sets owner=Administrators, which only works elevated/as a service).
++var windowsSDDL = ""
+ 
+ func listen(path string) (net.Listener, error) {
+ 	lc, err := winio.ListenPipe(

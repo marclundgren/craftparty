@@ -14,6 +14,9 @@ export interface TailscaleBins {
   version: string;
 }
 
+const TAILSCALE_WINDOWS_VERSION = "1.98.9";
+const TAILSCALE_WINDOWS_MIRROR = `https://github.com/marclundgren/craftparty/releases/download/tailscale-v${TAILSCALE_WINDOWS_VERSION}`;
+
 interface PkgsIndex {
   TarballsVersion: string;
   Tarballs: Record<string, string>;
@@ -32,6 +35,31 @@ interface PkgsIndex {
  */
 export async function ensureTailscale(): Promise<TailscaleBins> {
   const platform = currentPlatform();
+
+  if (platform.os === "windows") {
+    // Our mirror build: upstream's tailscaled can't create its control
+    // pipe without elevation (see scripts/tailscale-windows/).
+    const arch = platform.arch === "aarch64" ? "arm64" : "amd64";
+    const version = TAILSCALE_WINDOWS_VERSION;
+    const dir = path.join(dataDir(), "vpn", "tailscale", `${version}-craftparty`);
+    const bins = {
+      tailscale: path.join(dir, "tailscale.exe"),
+      tailscaled: path.join(dir, "tailscaled.exe"),
+      version,
+    };
+    if (fs.existsSync(bins.tailscale) && fs.existsSync(bins.tailscaled)) {
+      return bins;
+    }
+    await fsp.mkdir(dir, { recursive: true });
+    for (const cmd of ["tailscaled", "tailscale"] as const) {
+      await downloadFile(
+        `${TAILSCALE_WINDOWS_MIRROR}/${cmd}_${version}_windows_${arch}.exe`,
+        path.join(dir, `${cmd}.exe`),
+      );
+    }
+    return bins;
+  }
+
   const index = await fetchJson<PkgsIndex>(
     "https://pkgs.tailscale.com/stable/?mode=json",
   );
@@ -67,37 +95,6 @@ export async function ensureTailscale(): Promise<TailscaleBins> {
       );
     }
     return bins;
-  }
-
-  if (platform.os === "windows") {
-    const arch = platform.arch === "aarch64" ? "arm64" : "amd64";
-    const msi = index.MSIs[arch];
-    if (!msi) throw new Error(`No tailscale MSI for ${arch}`);
-    const version = index.MSIsVersion;
-    const dir = path.join(dataDir(), "vpn", "tailscale", version);
-    const found = () => ({
-      tailscale: findFileRecursive(dir, "tailscale.exe"),
-      tailscaled: findFileRecursive(dir, "tailscaled.exe"),
-    });
-    let bins = found();
-    if (!bins.tailscale || !bins.tailscaled) {
-      const archive = path.join(dataDir(), "vpn", "tailscale", msi);
-      await downloadFile(`https://pkgs.tailscale.com/stable/${msi}`, archive);
-      await fsp.mkdir(dir, { recursive: true });
-      // Administrative image extraction — unpacks files, needs no admin.
-      await execFileAsync("msiexec.exe", [
-        "/a",
-        archive,
-        `TARGETDIR=${dir}`,
-        "/qn",
-      ]);
-      await fsp.rm(archive, { force: true });
-      bins = found();
-    }
-    if (!bins.tailscale || !bins.tailscaled) {
-      throw new Error(`MSI extraction did not yield tailscale binaries (${dir})`);
-    }
-    return { tailscale: bins.tailscale, tailscaled: bins.tailscaled, version };
   }
 
   // macOS: the standalone app zip contains the CLI and daemon.

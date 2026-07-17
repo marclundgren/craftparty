@@ -271,3 +271,11 @@ input[type="text"]:focus {
       var(--dirt) var(--block)
     );
 }
+
+.report-row {
+  margin-top: 0.5rem;
+}
+
+.report-row .hint {
+  margin: 0 0 0.4rem;
+}
