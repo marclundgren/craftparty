@@ -1,0 +1,13 @@
+diff --git a/hscontrol/util/file.go b/hscontrol/util/file.go
+index f6b0983..c981613 100644
+--- a/hscontrol/util/file.go
++++ b/hscontrol/util/file.go
+@@ -27,7 +27,7 @@ var ErrDirectoryPermission = errors.New("creating directory failed with permissi
+ func AbsolutePathFromConfigPath(path string) string {
+ 	// If a relative path is provided, prefix it with the directory where
+ 	// the config file was found.
+-	if (path != "") && !strings.HasPrefix(path, string(os.PathSeparator)) {
++	if (path != "") && !filepath.IsAbs(path) && !strings.HasPrefix(path, string(os.PathSeparator)) {
+ 		dir, _ := filepath.Split(viper.ConfigFileUsed())
+ 		if dir != "" {
+ 			path = filepath.Join(dir, path)

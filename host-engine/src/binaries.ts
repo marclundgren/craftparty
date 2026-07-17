@@ -138,7 +138,13 @@ function findFileRecursive(root: string, name: string): string | null {
   return null;
 }
 
-/** Ensure the headscale single binary is present (GitHub releases). */
+// Pinned so an upstream release can't change what hosts run. Upstream
+// stopped shipping Windows binaries, so Windows downloads our mirror
+// build (cross-compiled + path fix; see scripts/headscale-windows/).
+const HEADSCALE_VERSION = "0.29.2";
+const HEADSCALE_WINDOWS_MIRROR = `https://github.com/marclundgren/craftparty/releases/download/headscale-v${HEADSCALE_VERSION}`;
+
+/** Ensure the headscale single binary is present (pinned release). */
 export async function ensureHeadscale(): Promise<{
   headscale: string;
   version: string;
@@ -146,29 +152,22 @@ export async function ensureHeadscale(): Promise<{
   const platform = currentPlatform();
   const osName = platform.os === "mac" ? "darwin" : platform.os;
   const arch = platform.arch === "aarch64" ? "arm64" : "amd64";
+  const v = HEADSCALE_VERSION;
 
-  const release = await fetchJson<{
-    tag_name: string;
-    assets: Array<{ name: string; browser_download_url: string }>;
-  }>("https://api.github.com/repos/juanfont/headscale/releases/latest");
-
-  const suffix = `${osName}_${arch}${platform.os === "windows" ? ".exe" : ""}`;
-  const asset = release.assets.find((a) => a.name.endsWith(suffix));
-  if (!asset) {
-    throw new Error(
-      `No headscale ${release.tag_name} asset for ${suffix} (assets: ${release.assets.map((a) => a.name).join(", ")})`,
-    );
-  }
+  const url =
+    platform.os === "windows"
+      ? `${HEADSCALE_WINDOWS_MIRROR}/headscale_${v}_windows_${arch}.exe`
+      : `https://github.com/juanfont/headscale/releases/download/v${v}/headscale_${v}_${osName}_${arch}`;
 
   const bin = path.join(
     dataDir(),
     "vpn",
     "headscale",
-    `headscale-${release.tag_name}${platform.os === "windows" ? ".exe" : ""}`,
+    `headscale-v${v}${platform.os === "windows" ? ".exe" : ""}`,
   );
   if (!fs.existsSync(bin)) {
-    await downloadFile(asset.browser_download_url, bin);
+    await downloadFile(url, bin);
     await fsp.chmod(bin, 0o755);
   }
-  return { headscale: bin, version: release.tag_name };
+  return { headscale: bin, version: `v${v}` };
 }

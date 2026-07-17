@@ -44,3 +44,6 @@ next-env.d.ts
 host-app/node_modules/
 host-app/dist/
 host-app/release/
+
+# claude local state
+.claude/
