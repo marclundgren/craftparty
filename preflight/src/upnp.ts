@@ -124,12 +124,24 @@ async function soap(
   if (!res.ok) {
     const code = tag(text, "errorCode");
     const desc = tag(text, "errorDescription");
-    throw new Error(
+    throw new UpnpError(
       `${action} failed: HTTP ${res.status}` +
         (code ? ` (UPnP error ${code}${desc ? `: ${desc}` : ""})` : ""),
+      code ? Number(code) : null,
     );
   }
   return text;
+}
+
+export class UpnpError extends Error {
+  /** UPnP fault code, e.g. 718 ConflictInMappingEntry; null if absent. */
+  readonly code: number | null;
+
+  constructor(message: string, code: number | null) {
+    super(message);
+    this.name = "UpnpError";
+    this.code = code;
+  }
 }
 
 export async function getExternalIp(gw: Gateway): Promise<string | null> {
@@ -162,6 +174,38 @@ export async function addPortMapping(
       `<NewPortMappingDescription>${m.description}</NewPortMappingDescription>` +
       `<NewLeaseDuration>${m.leaseSeconds}</NewLeaseDuration>`,
   );
+}
+
+export interface ExistingMapping {
+  internalClient: string;
+  internalPort: number;
+  description: string;
+}
+
+/** The mapping currently holding an external port, or null if none. */
+export async function getSpecificPortMapping(
+  gw: Gateway,
+  externalPort: number,
+  protocol: "TCP" | "UDP",
+): Promise<ExistingMapping | null> {
+  try {
+    const xml = await soap(
+      gw,
+      "GetSpecificPortMappingEntry",
+      `<NewRemoteHost></NewRemoteHost>` +
+        `<NewExternalPort>${externalPort}</NewExternalPort>` +
+        `<NewProtocol>${protocol}</NewProtocol>`,
+    );
+    return {
+      internalClient: tag(xml, "NewInternalClient") ?? "",
+      internalPort: Number(tag(xml, "NewInternalPort") ?? 0),
+      description: tag(xml, "NewPortMappingDescription") ?? "",
+    };
+  } catch (err) {
+    // 714 NoSuchEntryInArray: the port is free.
+    if (err instanceof UpnpError && err.code === 714) return null;
+    throw err;
+  }
 }
 
 export async function deletePortMapping(
