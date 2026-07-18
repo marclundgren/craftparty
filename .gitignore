@@ -47,3 +47,8 @@ host-app/release/
 
 # claude local state
 .claude/
+
+# addons (gradle)
+addons/.gradle/
+addons/*/build/
+addons/build/

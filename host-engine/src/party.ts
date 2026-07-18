@@ -5,6 +5,7 @@ import { startServer, type ServerHandle } from "./server.ts";
 import { ensureHeadscale, ensureTailscale } from "./binaries.ts";
 import { startHeadscale, type HeadscaleHandle } from "./headscale.ts";
 import { startTailscaled, type TailscaledHandle } from "./tailscaled.ts";
+import type { AddonJarRef } from "./addons.ts";
 
 export type ConnectMode = "independent" | "assisted";
 
@@ -51,6 +52,8 @@ export interface PartyOptions {
     hostAuthKey: string;
     friendAuthKey: string;
   };
+  /** Marketplace addon jars to install into the world before launch. */
+  addons?: AddonJarRef[];
   memoryMb?: number;
   motd?: string;
   onLog?: (source: "headscale" | "tailscale" | "minecraft", line: string) => void;
@@ -156,6 +159,7 @@ export async function startParty(opts: PartyOptions): Promise<PartyHandle> {
       javaPath: jre.javaPath,
       worldName: opts.worldName,
       acceptEula: opts.acceptEula,
+      addons: opts.addons,
       memoryMb: opts.memoryMb,
       motd: opts.motd,
       onLog: (l) => opts.onLog?.("minecraft", l),

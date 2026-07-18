@@ -17,6 +17,7 @@ export default function Home() {
             <div className="nav-links">
               <a href="#host">How it works</a>
               <a href="#join">Got an invite?</a>
+              <a href="/marketplace">Marketplace</a>
               <a href="#faq">FAQ</a>
               <a href="https://github.com/marclundgren/craftparty">GitHub</a>
             </div>
@@ -199,8 +200,11 @@ export default function Home() {
             <details>
               <summary>Can we use mods?</summary>
               <p>
-                Craftparty runs a Fabric server under the hood, so yes —
-                mod support is on the roadmap.
+                Yes — the <a href="/marketplace">Craftparty Marketplace</a>{" "}
+                has free addons you can tick on when starting your world.
+                They run on the host&apos;s side, so friends join with
+                completely vanilla Minecraft. Power users can also drop any
+                Fabric server mod into the world&apos;s mods folder.
               </p>
             </details>
             <details>
@@ -219,6 +223,7 @@ export default function Home() {
         <div className="wrap">
           <div className="links">
             <a href={RELEASES_URL}>Download</a>
+            <a href="/marketplace">Marketplace</a>
             <a href="https://github.com/marclundgren/craftparty">GitHub</a>
             <a href="#faq">FAQ</a>
           </div>

@@ -1,0 +1,33 @@
+// Craftparty addons: server-side Fabric mods that vanilla clients can
+// join. Build all jars with: gradle build (jars land in
+// <module>/build/libs/). See scripts/addons-build.sh.
+plugins {
+    id 'net.fabricmc.fabric-loom' version '1.17.16' apply false
+}
+
+subprojects {
+    apply plugin: 'net.fabricmc.fabric-loom'
+    apply plugin: 'java-library'
+
+    version = rootProject.addons_version
+    group = 'party.craft'
+
+    dependencies {
+        // 26.x ships unobfuscated — no mappings dependency at all.
+        minecraft "com.mojang:minecraft:${rootProject.minecraft_version}"
+        implementation "net.fabricmc:fabric-loader:${rootProject.loader_version}"
+        implementation "net.fabricmc.fabric-api:fabric-api:${rootProject.fabric_api_version}"
+    }
+
+    processResources {
+        inputs.property 'version', project.version
+        filesMatching('fabric.mod.json') {
+            expand 'version': project.version
+        }
+    }
+
+    java {
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
+    }
+}

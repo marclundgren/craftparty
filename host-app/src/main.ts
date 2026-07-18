@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, clipboard } from "electron";
+import { app, BrowserWindow, ipcMain, clipboard, shell } from "electron";
 import os from "node:os";
 import fsp from "node:fs/promises";
 import path from "node:path";
@@ -61,6 +61,28 @@ const send = (channel: string, ...args: unknown[]) => {
 };
 
 const REPORT_URL = "https://craftparty-ten.vercel.app/api/report";
+const MARKETPLACE_URL = "https://craftparty-ten.vercel.app/marketplace";
+const ADDONS_URL = "https://craftparty-ten.vercel.app/addons.json";
+
+interface RegistryAddon {
+  id: string;
+  name: string;
+  emoji: string;
+  tagline: string;
+  version: string;
+  jars: Array<{ filename: string; url: string }>;
+}
+
+let addonsCache: RegistryAddon[] | null = null;
+
+async function fetchAddons(): Promise<RegistryAddon[]> {
+  if (addonsCache) return addonsCache;
+  const res = await fetch(ADDONS_URL, { signal: AbortSignal.timeout(8000) });
+  if (!res.ok) throw new Error(`addons registry: HTTP ${res.status}`);
+  const data = (await res.json()) as { addons: RegistryAddon[] };
+  addonsCache = data.addons;
+  return addonsCache;
+}
 
 /**
  * Failed starts produce a diagnostic report: saved locally, posted to the
@@ -125,22 +147,60 @@ ipcMain.handle("preflight", async () => {
   }
 });
 
+ipcMain.handle("get-addons", async () => {
+  try {
+    const addons = await fetchAddons();
+    return {
+      addons: addons.map(({ id, name, emoji, tagline, version }) => ({
+        id,
+        name,
+        emoji,
+        tagline,
+        version,
+      })),
+    };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : String(err) };
+  }
+});
+
+ipcMain.handle("open-marketplace", () => {
+  shell.openExternal(MARKETPLACE_URL);
+  return { ok: true };
+});
+
 ipcMain.handle(
   "start-party",
   async (
     _event,
-    opts: { worldName: string; acceptEula: boolean; remote: boolean },
+    opts: {
+      worldName: string;
+      acceptEula: boolean;
+      remote: boolean;
+      addonIds?: string[];
+    },
   ) => {
     if (party || starting) return { error: "A party is already running." };
     starting = true;
     let phase: string | null = null;
     const logs: string[] = [];
     try {
+      // Resolve selected addon ids to their jar downloads. A failure
+      // here (registry unreachable) fails the start loudly rather than
+      // silently launching a world without the addons the host chose.
+      const addonJars =
+        opts.addonIds && opts.addonIds.length > 0
+          ? (await fetchAddons())
+              .filter((a) => opts.addonIds!.includes(a.id))
+              .flatMap((a) => a.jars)
+          : [];
+
       const partyOpts: PartyOptions = {
         worldName: opts.worldName,
         acceptEula: opts.acceptEula,
         mode: "independent",
         remote: opts.remote,
+        addons: addonJars,
         onPhase: (p) => {
           phase = p;
           send("phase", p);
@@ -253,6 +313,9 @@ app.whenReady().then(() => {
     setTimeout(async () => {
       let ok = false;
       try {
+        // Give the addons registry fetch a moment, then tick the first
+        // addon so the selftest exercises the full addon pipeline.
+        await new Promise((r) => setTimeout(r, 4000));
         await page.executeJavaScript(`
           (() => {
             const name = document.getElementById("world-name");
@@ -263,6 +326,11 @@ app.whenReady().then(() => {
             eula.dispatchEvent(new Event("change"));
             const remote = document.getElementById("remote");
             if (!remote.disabled) { remote.checked = false; }
+            const addon = document.querySelector("#addons-list input");
+            if (addon) {
+              addon.checked = true;
+              addon.dispatchEvent(new Event("change"));
+            }
             document.getElementById("start").click();
           })()
         `);

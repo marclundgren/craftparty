@@ -279,3 +279,32 @@ input[type="text"]:focus {
 .report-row .hint {
   margin: 0 0 0.4rem;
 }
+
+.addons {
+  margin: 0.9rem 0 0.3rem;
+  border: 2px solid #e3d9c8;
+  border-radius: 8px;
+  padding: 0.6rem 0.8rem;
+  background: #fdfbf7;
+}
+
+.addons summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.addons .check {
+  margin: 0.55rem 0 0;
+}
+
+.addon-tag {
+  color: #8f8171;
+  font-weight: 400;
+  font-size: 0.85rem;
+}
+
+.hint-inline {
+  color: #8f8171;
+  font-weight: 400;
+  font-size: 0.85rem;
+}

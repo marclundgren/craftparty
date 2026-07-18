@@ -7,6 +7,7 @@ import { downloadFile } from "./download.ts";
 import { trackChild } from "./pids.ts";
 import { resolveLatestFabricServer, type FabricServer } from "./versions.ts";
 import { findFreePort } from "./net-util.ts";
+import { syncAddons, type AddonJarRef } from "./addons.ts";
 import { dataDir } from "./platform.ts";
 
 export interface ServerOptions {
@@ -18,6 +19,8 @@ export interface ServerOptions {
    * (https://aka.ms/MinecraftEULA). The UI must ask the user explicitly.
    */
   acceptEula: boolean;
+  /** Marketplace addon jars synced into the world's mods folder. */
+  addons?: AddonJarRef[];
   memoryMb?: number;
   port?: number;
   motd?: string;
@@ -83,6 +86,8 @@ export async function startServer(opts: ServerOptions): Promise<ServerHandle> {
       props.replace(/^server-port=.*$/m, `server-port=${port}`),
     );
   }
+
+  await syncAddons(worldDir, opts.addons ?? [], opts.onLog);
 
   const proc = spawn(
     opts.javaPath,

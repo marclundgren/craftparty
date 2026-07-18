@@ -115,6 +115,51 @@ function showReport(prefix, result) {
   }
 })();
 
+// ---- addons ----
+// Marketplace addons are optional; if the registry is unreachable the
+// section simply stays hidden and worlds start vanilla.
+(async () => {
+  const result = await craftparty.getAddons();
+  if (result.error || !result.addons?.length) return;
+  const list = $("addons-list");
+  for (const addon of result.addons) {
+    const label = document.createElement("label");
+    label.className = "check";
+    const box = document.createElement("input");
+    box.type = "checkbox";
+    box.dataset.addonId = addon.id;
+    box.addEventListener("change", refreshAddonsSummary);
+    label.append(
+      box,
+      ` ${addon.emoji} ${addon.name} `,
+    );
+    const tag = document.createElement("span");
+    tag.className = "addon-tag";
+    tag.textContent = `— ${addon.tagline}`;
+    label.append(tag);
+    list.append(label);
+  }
+  $("addons-box").hidden = false;
+  refreshAddonsSummary();
+})();
+
+function refreshAddonsSummary() {
+  const chosen = selectedAddonIds().length;
+  $("addons-summary").textContent =
+    chosen > 0 ? `(${chosen} selected)` : "(optional)";
+}
+
+function selectedAddonIds() {
+  return [...document.querySelectorAll("#addons-list input:checked")].map(
+    (el) => el.dataset.addonId,
+  );
+}
+
+$("marketplace-link").addEventListener("click", (e) => {
+  e.preventDefault();
+  craftparty.openMarketplace();
+});
+
 // ---- start ----
 startBtn.addEventListener("click", async () => {
   setupError.hidden = true;
@@ -124,6 +169,7 @@ startBtn.addEventListener("click", async () => {
     worldName: worldName.value.trim(),
     acceptEula: eula.checked,
     remote: remote.checked,
+    addonIds: selectedAddonIds(),
   });
   if (result.error) {
     rememberSection(setup);
