@@ -14,6 +14,7 @@
  */
 import net from "node:net";
 import { startParty, decodeInvite } from "./party.ts";
+import { ensureWorld } from "./worlds.ts";
 import { ensureTailscale } from "./binaries.ts";
 import { startTailscaled } from "./tailscaled.ts";
 import { socks5Connect } from "./socks.ts";
@@ -27,7 +28,7 @@ const log = (msg: string) =>
 
 // ---- HOST ----
 const party = await startParty({
-  worldName: "party-smoke",
+  world: await ensureWorld("party-smoke"),
   acceptEula: true,
   mode: "independent",
   remote,

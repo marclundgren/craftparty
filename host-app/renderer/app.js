@@ -10,7 +10,11 @@ const joinRunning = $("join-running");
 const HOST_SECTIONS = [setup, progress, running];
 const JOIN_SECTIONS = [joinSetup, joinProgress, joinRunning];
 const netStatus = $("net-status");
+const worldsBox = $("worlds-box");
+const worldsList = $("worlds-list");
+const newWorldBox = $("new-world-box");
 const worldName = $("world-name");
+const worldNameHint = $("world-name-hint");
 const remote = $("remote");
 const remoteHint = $("remote-hint");
 const eula = $("eula");
@@ -39,12 +43,180 @@ const rememberSection = (section) => {
   show(section);
 };
 
-function refreshStartEnabled() {
-  startBtn.disabled = !(worldName.value.trim() && eula.checked);
+// ---- worlds ----
+// Worlds outlive parties: stopping a party (or quitting) leaves the world
+// on disk. The host picks a saved world to continue, starts a new one, or
+// deletes one for good — nothing here happens implicitly.
+let worlds = [];
+/** Selected saved world, or null for "start a new world". */
+let chosenWorldId = null;
+
+async function refreshWorlds(preferId) {
+  const result = await craftparty.listWorlds();
+  worlds = result.worlds ?? [];
+  if (preferId && worlds.some((w) => w.id === preferId)) chosenWorldId = preferId;
+  if (chosenWorldId && !worlds.some((w) => w.id === chosenWorldId)) {
+    chosenWorldId = null; // the one we had selected is gone
+  }
+  renderWorlds();
 }
 
-worldName.addEventListener("input", refreshStartEnabled);
-eula.addEventListener("change", refreshStartEnabled);
+function renderWorlds() {
+  worldsBox.hidden = worlds.length === 0;
+  worldsList.replaceChildren();
+  for (const world of worlds) {
+    worldsList.append(worldRow(world));
+  }
+  if (worlds.length > 0) worldsList.append(newWorldRow());
+  refreshChoice();
+}
+
+function worldRow(world) {
+  const row = document.createElement("div");
+  row.className = "world-row";
+  row.dataset.worldId = world.id;
+
+  const pick = document.createElement("label");
+  pick.className = "world-pick";
+  const radio = document.createElement("input");
+  radio.type = "radio";
+  radio.name = "world-choice";
+  radio.value = world.id;
+  radio.addEventListener("change", () => chooseWorld(world.id));
+  const text = document.createElement("span");
+  const name = document.createElement("span");
+  name.className = "world-name";
+  name.textContent = world.name;
+  const meta = document.createElement("span");
+  meta.className = "world-meta";
+  meta.textContent = `${lastPlayed(world)} · ${formatSize(world.sizeBytes)}`;
+  text.append(name, meta);
+  pick.append(radio, text);
+
+  const actions = document.createElement("span");
+  actions.className = "world-actions";
+  const folder = document.createElement("button");
+  folder.className = "world-btn";
+  folder.type = "button";
+  folder.title = "Open this world's folder";
+  folder.textContent = "Folder";
+  folder.addEventListener("click", () => craftparty.revealWorld(world.id));
+  const del = document.createElement("button");
+  del.className = "world-btn world-btn-danger";
+  del.type = "button";
+  del.textContent = "Delete";
+  del.addEventListener("click", async () => {
+    del.disabled = true;
+    // The confirmation is a native dialog raised by the main process.
+    const result = await craftparty.deleteWorld(world.id);
+    del.disabled = false;
+    if (result.error) {
+      setupError.textContent = result.error;
+      setupError.hidden = false;
+      return;
+    }
+    if (result.deleted) await refreshWorlds();
+  });
+  actions.append(folder, del);
+
+  row.append(pick, actions);
+  return row;
+}
+
+function newWorldRow() {
+  const row = document.createElement("div");
+  row.className = "world-row";
+  row.dataset.worldId = "";
+  const pick = document.createElement("label");
+  pick.className = "world-pick";
+  const radio = document.createElement("input");
+  radio.type = "radio";
+  radio.name = "world-choice";
+  radio.value = "";
+  radio.addEventListener("change", () => chooseWorld(null));
+  const name = document.createElement("span");
+  name.className = "world-name";
+  name.textContent = "Start a new world";
+  pick.append(radio, name);
+  row.append(pick);
+  return row;
+}
+
+function chooseWorld(id) {
+  chosenWorldId = id;
+  refreshChoice();
+  if (id === null) worldName.focus();
+  else applyAddonSelection(worlds.find((w) => w.id === id)?.addonIds ?? []);
+}
+
+/**
+ * Keep the form in sync with the choice: which controls show, what the
+ * start button promises, and whether it's allowed to fire.
+ */
+function refreshChoice() {
+  const chosen = worlds.find((w) => w.id === chosenWorldId) ?? null;
+  newWorldBox.hidden = chosen !== null;
+
+  // Names collapse to the same world directory ("Dragon Cave!" and
+  // "dragon cave" are one world), so say plainly when a new name would
+  // land on a world that already exists rather than silently reusing it.
+  const collision = chosen ? null : worldWithName(worldName.value);
+  worldNameHint.hidden = !collision;
+  if (collision) {
+    worldNameHint.textContent = `You already have a world called "${collision.name}" — starting will continue that world.`;
+  }
+
+  // Highlight whatever the start button is actually about to do, so a
+  // typed-in collision points at the world it will continue.
+  const target = chosen ?? collision;
+  for (const row of worldsList.children) {
+    const selected = row.dataset.worldId === (target?.id ?? "");
+    row.classList.toggle("selected", selected);
+    row.querySelector("input[type=radio]").checked = selected;
+  }
+
+  startBtn.textContent = target ? `Continue "${target.name}"` : "Start my world";
+  startBtn.disabled = !(eula.checked && (target || worldName.value.trim()));
+}
+
+function worldWithName(name) {
+  const id = worldIdFor(name);
+  return id ? (worlds.find((w) => w.id === id) ?? null) : null;
+}
+
+/** Mirrors worldId() in host-engine/src/worlds.ts. */
+function worldIdFor(name) {
+  return name
+    .trim()
+    .replace(/[^a-zA-Z0-9 _-]/g, "")
+    .replace(/\s+/g, "-")
+    .toLowerCase();
+}
+
+function lastPlayed(world) {
+  if (!world.lastPlayedAt) return "Never played";
+  const days = Math.floor((Date.now() - Date.parse(world.lastPlayedAt)) / 86_400_000);
+  if (days <= 0) return "Played today";
+  if (days === 1) return "Played yesterday";
+  if (days < 30) return `Played ${days} days ago`;
+  return `Played ${new Date(world.lastPlayedAt).toLocaleDateString()}`;
+}
+
+function formatSize(bytes) {
+  if (!bytes) return "empty";
+  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  if (bytes < 1024 * 1024 * 1024) return `${Math.round(bytes / 1024 / 1024)} MB`;
+  return `${(bytes / 1024 / 1024 / 1024).toFixed(1)} GB`;
+}
+
+// Typing a name means "new world", even if a saved one is selected.
+worldName.addEventListener("input", () => {
+  chosenWorldId = null;
+  refreshChoice();
+});
+eula.addEventListener("change", refreshChoice);
+
+refreshWorlds();
 
 craftparty.onPhase((phase) => {
   const friendly = friendlyPhase(phase);
@@ -140,8 +312,17 @@ function showReport(prefix, result) {
     list.append(label);
   }
   $("addons-box").hidden = false;
-  refreshAddonsSummary();
+  // A saved world may already be selected; show the addons it last ran with.
+  applyAddonSelection(worlds.find((w) => w.id === chosenWorldId)?.addonIds ?? []);
 })();
+
+/** Tick exactly the addons a world remembers, leaving the rest clear. */
+function applyAddonSelection(ids) {
+  for (const box of document.querySelectorAll("#addons-list input")) {
+    box.checked = ids.includes(box.dataset.addonId);
+  }
+  refreshAddonsSummary();
+}
 
 function refreshAddonsSummary() {
   const chosen = selectedAddonIds().length;
@@ -164,9 +345,14 @@ $("marketplace-link").addEventListener("click", (e) => {
 startBtn.addEventListener("click", async () => {
   setupError.hidden = true;
   $("setup-report").hidden = true;
+  // Continue a saved world (picked from the list, or matched by name), or
+  // create a fresh one. Never both — the main process resumes only when
+  // it is handed an id.
+  const resume = chosenWorldId ?? worldWithName(worldName.value)?.id ?? null;
   rememberSection(progress);
   const result = await craftparty.startParty({
-    worldName: worldName.value.trim(),
+    worldId: resume ?? undefined,
+    worldName: resume ? undefined : worldName.value.trim(),
     acceptEula: eula.checked,
     remote: remote.checked,
     addonIds: selectedAddonIds(),
@@ -176,10 +362,14 @@ startBtn.addEventListener("click", async () => {
     setupError.textContent = result.error;
     setupError.hidden = false;
     showReport("setup", result);
+    // A failed start may still have created the world directory; show it
+    // so a retry continues that world instead of colliding with it.
+    await refreshWorlds(resume ?? worldIdFor(worldName.value));
     return;
   }
   $("invite").value = result.inviteCode;
   $("host-address").value = `localhost:${result.port}`;
+  $("running-title").textContent = `"${result.worldName}" is running`;
   $("running-detail").textContent = result.remote
     ? "Friends anywhere on the internet can join with your invite."
     : "Friends on your home network can join with your invite.";
@@ -200,10 +390,14 @@ $("copy-host-address").addEventListener("click", async () => {
 });
 
 // ---- stop ----
+// Stopping keeps the world — come back to the picker with it selected,
+// so continuing where you left off is the obvious next click.
 $("stop").addEventListener("click", async () => {
   $("stop").disabled = true;
-  await craftparty.stopParty();
+  const result = await craftparty.stopParty();
   $("stop").disabled = false;
+  worldName.value = "";
+  await refreshWorlds(result.worldId);
   rememberSection(setup);
 });
 

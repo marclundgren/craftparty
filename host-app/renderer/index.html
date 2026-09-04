@@ -21,8 +21,17 @@
     <!-- setup -->
     <section id="setup" class="card">
       <h1>Host a party</h1>
-      <label for="world-name">Name your world</label>
-      <input id="world-name" type="text" maxlength="32" placeholder="e.g. Dragon Cave" autocomplete="off" />
+
+      <div id="worlds-box" hidden>
+        <label>Your worlds</label>
+        <div id="worlds-list" class="worlds"></div>
+      </div>
+
+      <div id="new-world-box">
+        <label for="world-name">Name your world</label>
+        <input id="world-name" type="text" maxlength="32" placeholder="e.g. Dragon Cave" autocomplete="off" />
+        <p id="world-name-hint" class="hint" hidden></p>
+      </div>
 
       <label class="check">
         <input id="remote" type="checkbox" checked />
@@ -79,6 +88,7 @@
       <p class="hint">Send this to them however you like — they paste it into Craftparty's "Join a party" tab and appear in your world.</p>
 
       <button id="stop" class="btn btn-danger">Stop the party</button>
+      <p class="hint">Stopping saves your world — it stays on this computer and you can start it again any time.</p>
     </section>
 
     <!-- join: setup -->

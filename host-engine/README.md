@@ -17,9 +17,33 @@ Zero dependencies; needs Node ≥ 23.6 (runs TypeScript directly).
 | headscale        | GitHub releases (Independent mode only)  | planned     |
 
 Everything lives under `~/.craftparty` (override with `CRAFTPARTY_HOME`):
-`runtime/` (JRE), `server/` (jars), `worlds/<name>/` (one dir per party,
+`runtime/` (JRE), `server/` (jars), `worlds/<id>/` (one dir per world,
 including all world data — this is the "your world stays on your machine"
 promise in file form).
+
+## Worlds
+
+`src/worlds.ts` owns `worlds/`. A world is a directory plus a small
+`craftparty-world.json` (display name, created/last-played stamps, the
+addons it last ran with); a directory without that file is still a world,
+its metadata reconstructed from the filesystem, so saves from older
+versions keep working.
+
+Worlds are permanent by default and independent of any one party:
+
+- **Stopping a party or quitting the app leaves the world on disk.** Both
+  paths shut the server down with its console `stop` command, so the save
+  is clean and hosting it again resumes exactly where everyone left off.
+- **A host can keep as many worlds as they like.** `createWorld()` refuses
+  to reuse an existing directory, so a new party never lands on an old
+  save by accident; `getWorld()` is the explicit resume path.
+- **Nothing is ever deleted implicitly.** `deleteWorld()` is the only
+  removal path, and the app puts a native confirmation dialog in front of
+  it.
+
+```
+node --test src/worlds.test.ts
+```
 
 ## Vertical-slice smoke test
 
