@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, clipboard, shell } from "electron";
+import { app, BrowserWindow, dialog, ipcMain, clipboard, shell } from "electron";
 import os from "node:os";
 import fsp from "node:fs/promises";
 import path from "node:path";
@@ -10,6 +10,13 @@ import {
   type PartyOptions,
 } from "../../host-engine/src/party.ts";
 import { joinParty, type JoinHandle } from "../../host-engine/src/joiner.ts";
+import {
+  createWorld,
+  deleteWorld,
+  getWorld,
+  listWorlds,
+  recordPlayed,
+} from "../../host-engine/src/worlds.ts";
 import { reapStaleChildren } from "../../host-engine/src/pids.ts";
 
 let win: BrowserWindow | null = null;
@@ -169,18 +176,93 @@ ipcMain.handle("open-marketplace", () => {
   return { ok: true };
 });
 
+// Worlds live on disk between parties; the host decides when one goes
+// away. Everything the picker needs, newest-played first.
+ipcMain.handle("list-worlds", async () => {
+  try {
+    const worlds = await listWorlds();
+    return {
+      worlds: worlds.map((w) => ({
+        id: w.id,
+        name: w.name,
+        createdAt: w.createdAt,
+        lastPlayedAt: w.lastPlayedAt,
+        sizeBytes: w.sizeBytes,
+        addonIds: w.addonIds,
+      })),
+    };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : String(err) };
+  }
+});
+
+// Deleting a world is permanent, so the confirmation lives here rather
+// than in the renderer: there is no path to rm without the host saying yes
+// in a native dialog.
+ipcMain.handle("delete-world", async (_event, worldId: string) => {
+  try {
+    const world = await getWorld(worldId);
+    if (party?.world.id === world.id) {
+      return { error: "That world is running right now — stop the party first." };
+    }
+    const { response } = await dialog.showMessageBox(win!, {
+      type: "warning",
+      buttons: ["Delete forever", "Keep it"],
+      defaultId: 1,
+      cancelId: 1,
+      title: "Delete this world?",
+      message: `Delete "${world.name}" forever?`,
+      detail:
+        "Everything built in this world is erased from this computer. This cannot be undone.",
+    });
+    if (response !== 0) return { deleted: false };
+    await deleteWorld(world.id);
+    return { deleted: true };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : String(err) };
+  }
+});
+
+// Escape hatch for backups: show the world's folder in the file manager.
+ipcMain.handle("reveal-world", async (_event, worldId: string) => {
+  try {
+    const world = await getWorld(worldId);
+    await shell.openPath(world.dir);
+    return { ok: true };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : String(err) };
+  }
+});
+
 ipcMain.handle(
   "start-party",
   async (
     _event,
     opts: {
-      worldName: string;
+      /** Resume a saved world. */
+      worldId?: string;
+      /** Or create a new one under this name. */
+      worldName?: string;
       acceptEula: boolean;
       remote: boolean;
       addonIds?: string[];
     },
   ) => {
     if (party || starting) return { error: "A party is already running." };
+
+    // Explicit either way: resuming and creating are never confused, so a
+    // typo can't silently strand a world the host meant to resume. This
+    // runs before the start proper — a name clash is something for the
+    // host to fix, not a failure worth a diagnostic report.
+    let world;
+    try {
+      world = opts.worldId
+        ? await getWorld(opts.worldId)
+        : await createWorld(opts.worldName ?? "");
+    } catch (err) {
+      return { error: err instanceof Error ? err.message : String(err) };
+    }
+
     starting = true;
     let phase: string | null = null;
     const logs: string[] = [];
@@ -196,7 +278,7 @@ ipcMain.handle(
           : [];
 
       const partyOpts: PartyOptions = {
-        worldName: opts.worldName,
+        world,
         acceptEula: opts.acceptEula,
         mode: "independent",
         remote: opts.remote,
@@ -212,7 +294,10 @@ ipcMain.handle(
         },
       };
       party = await startParty(partyOpts);
+      await recordPlayed(world.id, opts.addonIds ?? []).catch(() => {});
       return {
+        worldId: world.id,
+        worldName: world.name,
         inviteCode: party.inviteCode,
         tailnetIp: party.tailnetIp,
         port: party.server.port,
@@ -227,11 +312,14 @@ ipcMain.handle(
   },
 );
 
+// Stopping shuts the Minecraft server down through its console `stop`
+// command, so the world is saved and left on disk for next time.
 ipcMain.handle("stop-party", async () => {
   if (!party) return { ok: true };
+  const { id: worldId, name: worldName } = party.world;
   await party.stop();
   party = null;
-  return { ok: true };
+  return { ok: true, worldId, worldName };
 });
 
 ipcMain.handle("join-party", async (_event, inviteCode: string) => {
@@ -488,8 +576,31 @@ function armDualSelftest() {
 
 app.whenReady().then(armDualSelftest);
 
-app.on("window-all-closed", async () => {
+/**
+ * Never leave a world behind on the way out. Both exits — closing the
+ * window and quitting outright (Cmd+Q, the dock, a session logout) — stop
+ * the Minecraft server through its console `stop` first, so the world is
+ * saved to disk instead of being orphaned and hard-killed on next launch.
+ */
+let shuttingDown = false;
+
+async function shutDownEngines(): Promise<void> {
   if (party) await party.stop().catch(() => {});
+  party = null;
   if (joined) await joined.stop().catch(() => {});
+  joined = null;
+}
+
+app.on("window-all-closed", async () => {
+  await shutDownEngines();
   app.quit();
+});
+
+app.on("before-quit", (event) => {
+  if (shuttingDown || (!party && !joined)) return;
+  // Hold the quit open while the world saves; a stuck server escalates to
+  // SIGTERM inside stop(), so this can't wait forever.
+  event.preventDefault();
+  shuttingDown = true;
+  shutDownEngines().finally(() => app.quit());
 });

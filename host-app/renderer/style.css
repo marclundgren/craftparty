@@ -308,3 +308,80 @@ input[type="text"]:focus {
   font-weight: 400;
   font-size: 0.85rem;
 }
+
+/* ---- saved worlds picker ---- */
+.worlds {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  max-height: 13rem;
+  overflow-y: auto;
+}
+
+.world-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 2px solid #e3d9c8;
+  border-radius: 6px;
+  padding: 0.5rem 0.6rem;
+  background: #fdfbf7;
+}
+
+.world-row.selected {
+  border-color: var(--grass);
+  background: #f4fbee;
+}
+
+.world-pick {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.world-pick input { width: 1.05rem; height: 1.05rem; accent-color: var(--grass); }
+
+.world-name {
+  display: block;
+  font-size: 0.95rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.world-meta {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 400;
+  color: var(--ink-soft);
+}
+
+.world-actions {
+  display: flex;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+
+.world-btn {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+  background: #fff;
+  border: 2px solid #e3d9c8;
+  border-radius: 4px;
+  padding: 0.3rem 0.55rem;
+  cursor: pointer;
+}
+
+.world-btn:hover { border-color: #c9bda4; }
+
+.world-btn-danger { color: var(--danger); border-color: #eccdc8; }
+
+.world-btn-danger:hover { border-color: var(--danger); }
+
+.world-btn:disabled { opacity: 0.5; cursor: progress; }

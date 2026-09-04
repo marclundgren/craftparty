@@ -10,6 +10,7 @@
 import net from "node:net";
 import { ensureJre } from "./jre.ts";
 import { startServer } from "./server.ts";
+import { ensureWorld } from "./worlds.ts";
 import { dataDir } from "./platform.ts";
 
 const verbose = process.argv.includes("--verbose");
@@ -23,9 +24,11 @@ console.log(
   `${stamp()} java ready: ${jre.releaseName} (Java ${jre.featureVersion})`,
 );
 
+const world = await ensureWorld("smoke-test");
 const server = await startServer({
   javaPath: jre.javaPath,
-  worldName: "smoke-test",
+  worldDir: world.dir,
+  worldName: world.name,
   acceptEula: true,
   memoryMb: 2048,
   onLog: (line) => {

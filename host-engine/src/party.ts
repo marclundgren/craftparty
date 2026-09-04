@@ -6,6 +6,7 @@ import { ensureHeadscale, ensureTailscale } from "./binaries.ts";
 import { startHeadscale, type HeadscaleHandle } from "./headscale.ts";
 import { startTailscaled, type TailscaledHandle } from "./tailscaled.ts";
 import type { AddonJarRef } from "./addons.ts";
+import type { World } from "./worlds.ts";
 
 export type ConnectMode = "independent" | "assisted";
 
@@ -34,7 +35,11 @@ export function decodeInvite(code: string): Invite {
 }
 
 export interface PartyOptions {
-  worldName: string;
+  /**
+   * The world to host — a fresh one from createWorld() or a saved one
+   * from getWorld(). Its directory survives the party either way.
+   */
+  world: World;
   /** Mojang requires explicit acceptance — the UI must ask. */
   acceptEula: boolean;
   mode: ConnectMode;
@@ -62,6 +67,7 @@ export interface PartyOptions {
 
 export interface PartyHandle {
   mode: ConnectMode;
+  world: World;
   invite: Invite;
   inviteCode: string;
   tailnetIp: string;
@@ -119,7 +125,7 @@ export async function startParty(opts: PartyOptions): Promise<PartyHandle> {
 
       headscale = await startHeadscale({
         binPath: hsBin.headscale,
-        name: opts.worldName,
+        name: opts.world.id,
         port: hsPort,
         serverUrl,
         tls,
@@ -142,14 +148,14 @@ export async function startParty(opts: PartyOptions): Promise<PartyHandle> {
     phase("joining private network");
     const vpn = await startTailscaled({
       bins: tsBins,
-      name: `host-${opts.worldName}`.toLowerCase().replace(/[^a-z0-9-]/g, "-"),
+      name: `host-${opts.world.id}`.toLowerCase().replace(/[^a-z0-9-]/g, "-"),
       onLog: (l) => opts.onLog?.("tailscale", l),
     });
     cleanups.push(() => vpn.stop());
     await vpn.up({
       loginServer: controlPlaneUrl,
       authKey: hostAuthKey,
-      hostname: `party-${opts.worldName}`.toLowerCase().replace(/[^a-z0-9-]/g, "-"),
+      hostname: `party-${opts.world.id}`.toLowerCase().replace(/[^a-z0-9-]/g, "-"),
     });
 
     const tailnetIp = await waitForTailnetIp(vpn);
@@ -157,7 +163,8 @@ export async function startParty(opts: PartyOptions): Promise<PartyHandle> {
     phase("starting Minecraft");
     const server = await startServer({
       javaPath: jre.javaPath,
-      worldName: opts.worldName,
+      worldDir: opts.world.dir,
+      worldName: opts.world.name,
       acceptEula: opts.acceptEula,
       addons: opts.addons,
       memoryMb: opts.memoryMb,
@@ -169,7 +176,7 @@ export async function startParty(opts: PartyOptions): Promise<PartyHandle> {
 
     const invite: Invite = {
       v: 1,
-      party: opts.worldName,
+      party: opts.world.name,
       controlPlaneUrl,
       authKey: friendAuthKey,
       server: { host: tailnetIp, port: server.port },
@@ -178,6 +185,7 @@ export async function startParty(opts: PartyOptions): Promise<PartyHandle> {
     phase("ready");
     return {
       mode: opts.mode,
+      world: opts.world,
       invite,
       inviteCode: encodeInvite(invite),
       tailnetIp,

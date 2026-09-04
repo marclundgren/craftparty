@@ -12,7 +12,12 @@ import { dataDir } from "./platform.ts";
 
 export interface ServerOptions {
   javaPath: string;
-  /** Party/world name; becomes the world directory name. */
+  /**
+   * The world's directory (see host-engine/src/worlds.ts). Created if it
+   * doesn't exist; never cleared, so an existing save resumes as it was.
+   */
+  worldDir: string;
+  /** Display name — used for the default MOTD and log labels. */
   worldName: string;
   /**
    * Mojang requires each server owner to accept the Minecraft EULA
@@ -60,7 +65,7 @@ export async function startServer(opts: ServerOptions): Promise<ServerHandle> {
   const port = opts.port ?? (await findFreePort(25565));
   const { jarPath, versions } = await ensureServerJar();
 
-  const worldDir = path.join(dataDir(), "worlds", sanitize(opts.worldName));
+  const worldDir = opts.worldDir;
   await fsp.mkdir(worldDir, { recursive: true });
   await fsp.writeFile(path.join(worldDir, "eula.txt"), "eula=true\n");
 
@@ -151,10 +156,4 @@ function lineReader(stream: NodeJS.ReadableStream, onLine: (l: string) => void) 
       buf = buf.slice(i + 1);
     }
   });
-}
-
-function sanitize(name: string): string {
-  const clean = name.trim().replace(/[^a-zA-Z0-9 _-]/g, "").replace(/\s+/g, "-");
-  if (!clean) throw new Error(`World name ${JSON.stringify(name)} is not usable`);
-  return clean.toLowerCase();
 }

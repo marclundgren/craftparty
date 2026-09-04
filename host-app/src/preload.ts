@@ -2,8 +2,12 @@ import { contextBridge, ipcRenderer } from "electron";
 
 contextBridge.exposeInMainWorld("craftparty", {
   preflight: () => ipcRenderer.invoke("preflight"),
+  listWorlds: () => ipcRenderer.invoke("list-worlds"),
+  deleteWorld: (worldId: string) => ipcRenderer.invoke("delete-world", worldId),
+  revealWorld: (worldId: string) => ipcRenderer.invoke("reveal-world", worldId),
   startParty: (opts: {
-    worldName: string;
+    worldId?: string;
+    worldName?: string;
     acceptEula: boolean;
     remote: boolean;
     addonIds: string[];

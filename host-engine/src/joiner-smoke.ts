@@ -8,6 +8,7 @@
  */
 import net from "node:net";
 import { startParty } from "./party.ts";
+import { ensureWorld } from "./worlds.ts";
 import { joinParty } from "./joiner.ts";
 import { minecraftStatus } from "./mc-ping.ts";
 
@@ -20,7 +21,7 @@ const debug = (src: string) => (line: string) => {
 };
 
 const party = await startParty({
-  worldName: "joiner-smoke",
+  world: await ensureWorld("joiner-smoke"),
   acceptEula: true,
   mode: "independent",
   onPhase: (p) => log(`host: ${p}`),
