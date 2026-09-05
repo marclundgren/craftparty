@@ -18,6 +18,14 @@ contextBridge.exposeInMainWorld("craftparty", {
   copy: (text: string) => ipcRenderer.invoke("copy", text),
   getAddons: () => ipcRenderer.invoke("get-addons"),
   openMarketplace: () => ipcRenderer.invoke("open-marketplace"),
+  updateState: () => ipcRenderer.invoke("update-state"),
+  checkForUpdates: () => ipcRenderer.invoke("check-for-updates"),
+  downloadUpdate: () => ipcRenderer.invoke("download-update"),
+  installUpdate: () => ipcRenderer.invoke("install-update"),
+  setAutoUpdate: (on: boolean) => ipcRenderer.invoke("set-auto-update", on),
+  openReleases: () => ipcRenderer.invoke("open-releases"),
+  onUpdateState: (cb: (state: unknown) => void) =>
+    ipcRenderer.on("update-state", (_e, state) => cb(state)),
   onPhase: (cb: (phase: string) => void) =>
     ipcRenderer.on("phase", (_e, phase) => cb(phase)),
   onLog: (cb: (source: string, line: string) => void) =>

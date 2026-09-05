@@ -5,9 +5,12 @@
   "description": "Craftparty — host a private Minecraft world for your friends.",
   "main": "dist/main.cjs",
   "scripts": {
-    "build": "esbuild src/main.ts --bundle --platform=node --format=cjs --external:electron --outfile=dist/main.cjs && esbuild src/preload.ts --bundle --platform=node --format=cjs --external:electron --outfile=dist/preload.cjs",
+    "build": "esbuild src/main.ts --bundle --platform=node --format=cjs --external:electron --external:electron-updater --outfile=dist/main.cjs && esbuild src/preload.ts --bundle --platform=node --format=cjs --external:electron --outfile=dist/preload.cjs",
     "start": "npm run build && electron .",
     "dist": "npm run build && electron-builder --publish never"
+  },
+  "dependencies": {
+    "electron-updater": "^6.8.9"
   },
   "devDependencies": {
     "electron": "^38.1.0",
@@ -17,7 +20,8 @@
   "allowScripts": {
     "electron@38.8.6": true,
     "esbuild@0.25.12": true,
-    "electron-builder@26.15.3": true
+    "electron-builder@26.15.3": true,
+    "electron-updater@6.8.9": false
   },
   "build": {
     "appId": "io.github.marclundgren.craftparty",
@@ -26,6 +30,7 @@
       "output": "release"
     },
     "files": [
+      "node_modules/**/*",
       "dist/**",
       "renderer/**",
       "package.json"
@@ -55,7 +60,12 @@
       "category": "Game",
       "artifactName": "Craftparty-${version}.${ext}"
     },
-    "executableName": "craftparty"
+    "executableName": "craftparty",
+    "publish": {
+      "provider": "github",
+      "owner": "marclundgren",
+      "repo": "craftparty"
+    }
   },
   "repository": {
     "type": "git",

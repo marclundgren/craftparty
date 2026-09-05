@@ -14,6 +14,13 @@
 
 * { box-sizing: border-box; }
 
+/*
+ * An author `display` rule beats the UA stylesheet's [hidden] rule, so a
+ * flex row with the hidden attribute would still show. Sections here are
+ * shown and hidden by that attribute throughout — make it always win.
+ */
+[hidden] { display: none !important; }
+
 html, body {
   margin: 0;
   height: 100%;
@@ -385,3 +392,59 @@ input[type="text"]:focus {
 .world-btn-danger:hover { border-color: var(--danger); }
 
 .world-btn:disabled { opacity: 0.5; cursor: progress; }
+
+/* ---- update bar ---- */
+.update-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  padding: 0.55rem 1rem 0;
+  font-size: 0.8rem;
+  color: #2d4250;
+}
+
+.update-text {
+  font-weight: 600;
+}
+
+.update-btn {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--ink);
+  background: var(--paper);
+  border: 2px solid #e4dcc8;
+  border-radius: 999px;
+  padding: 0.22rem 0.7rem;
+  cursor: pointer;
+}
+
+.update-btn:hover { border-color: #c9bda4; }
+
+.update-btn:disabled { opacity: 0.6; cursor: progress; }
+
+.update-auto {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.update-auto input {
+  width: 0.9rem;
+  height: 0.9rem;
+  accent-color: var(--grass);
+}
+
+.update-note {
+  margin: 0.3rem auto 0;
+  padding: 0 1rem;
+  max-width: 34rem;
+  text-align: center;
+  font-size: 0.78rem;
+  color: #3c5464;
+}
