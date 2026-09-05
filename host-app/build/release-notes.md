@@ -1,14 +1,17 @@
-- 🎨 **Craftparty has a face.** The app ships its own icon — a grass block
-  in a party hat — instead of the stock Electron cog, on Windows, macOS
-  and Linux, and in the dock while you're running it from source.
-- 🚚 **Automatic updates start working here.** 0.4.0 was published in a
-  form the updater couldn't see, so it never reached anyone. Install this
-  one by hand and later versions arrive on their own.
+- 🌍 **Set the difficulty before you start.** New worlds ask how tough you
+  want them — Peaceful for no monsters at all, then Easy, Medium or Hard.
+- 💀 **Hardcore, if you dare.** One life each: when you die, the world
+  locks for good. Off unless you tick it.
+- 🌱 **Bring your own seed.** Type in a seed to play a world someone told
+  you about, or leave it blank and get one nobody has seen before.
+- 🔒 **Your saved worlds are left alone.** These are chosen as a world is
+  made, so carrying on with an old world keeps exactly what it started
+  with.
 
 ## Downloads
-- **Windows:** Craftparty-Setup-0.5.0.exe
-- **macOS:** Craftparty-0.5.0.dmg
-- **Linux:** Craftparty-0.5.0.AppImage
+- **Windows:** Craftparty-Setup-0.6.0.exe
+- **macOS:** Craftparty-0.6.0.dmg
+- **Linux:** Craftparty-0.6.0.AppImage
 
 ## Heads up: unsigned beta builds
 These builds are not code-signed yet, so your computer will warn you the first time:

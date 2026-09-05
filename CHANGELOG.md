@@ -11,6 +11,18 @@ electron-builder posts that as the GitHub release body. See
 
 ## Unreleased
 
+## 0.6.0 — peaceful or hardcore
+
+- 🌍 **Set the difficulty before you start.** New worlds ask how tough you
+  want them — Peaceful for no monsters at all, then Easy, Medium or Hard.
+- 💀 **Hardcore, if you dare.** One life each: when you die, the world
+  locks for good. Off unless you tick it.
+- 🌱 **Bring your own seed.** Type in a seed to play a world someone told
+  you about, or leave it blank and get one nobody has seen before.
+- 🔒 **Your saved worlds are left alone.** These are chosen as a world is
+  made, so carrying on with an old world keeps exactly what it started
+  with.
+
 ## 0.5.0 — its own icon
 
 - 🎨 **Craftparty has a face.** The app ships its own icon — a grass block
