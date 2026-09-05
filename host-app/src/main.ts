@@ -10,6 +10,10 @@ import {
   type PartyHandle,
   type PartyOptions,
 } from "../../host-engine/src/party.ts";
+import {
+  parseWorldConfig,
+  type WorldConfigInput,
+} from "../../host-engine/src/world-config.ts";
 import { joinParty, type JoinHandle } from "../../host-engine/src/joiner.ts";
 import {
   createWorld,
@@ -297,6 +301,8 @@ ipcMain.handle(
       acceptEula: boolean;
       remote: boolean;
       addonIds?: string[];
+      /** Chosen in the UI; only takes effect on a brand-new world. */
+      worldConfig?: WorldConfigInput;
     },
   ) => {
     if (party || starting) return { error: "A party is already running." };
@@ -306,7 +312,12 @@ ipcMain.handle(
     // runs before the start proper — a name clash is something for the
     // host to fix, not a failure worth a diagnostic report.
     let world;
+    let worldConfig;
     try {
+      // Check the settings against world-config.ts before anything hits
+      // the disk, so a value the engine doesn't recognise can't leave an
+      // empty world directory behind.
+      worldConfig = parseWorldConfig(opts.worldConfig);
       world = opts.worldId
         ? await getWorld(opts.worldId)
         : await createWorld(opts.worldName ?? "");
@@ -334,6 +345,7 @@ ipcMain.handle(
         mode: "independent",
         remote: opts.remote,
         addons: addonJars,
+        worldConfig,
         onPhase: (p) => {
           phase = p;
           send("phase", p);

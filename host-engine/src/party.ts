@@ -2,6 +2,7 @@ import { exposePort, type Exposure } from "./expose.ts";
 import { findFreePort } from "./net-util.ts";
 import { ensureJre } from "./jre.ts";
 import { startServer, type ServerHandle } from "./server.ts";
+import type { WorldConfig } from "./world-config.ts";
 import { ensureHeadscale, ensureTailscale } from "./binaries.ts";
 import { startHeadscale, type HeadscaleHandle } from "./headscale.ts";
 import { startTailscaled, type TailscaledHandle } from "./tailscaled.ts";
@@ -61,6 +62,8 @@ export interface PartyOptions {
   addons?: AddonJarRef[];
   memoryMb?: number;
   motd?: string;
+  /** World settings; see ServerOptions — they only bite on a fresh world. */
+  worldConfig?: WorldConfig;
   onLog?: (source: "headscale" | "tailscale" | "minecraft", line: string) => void;
   onPhase?: (phase: string) => void;
 }
@@ -169,6 +172,7 @@ export async function startParty(opts: PartyOptions): Promise<PartyHandle> {
       addons: opts.addons,
       memoryMb: opts.memoryMb,
       motd: opts.motd,
+      worldConfig: opts.worldConfig,
       onLog: (l) => opts.onLog?.("minecraft", l),
     });
     cleanups.push(() => server.stop());

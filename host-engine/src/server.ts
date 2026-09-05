@@ -9,6 +9,11 @@ import { resolveLatestFabricServer, type FabricServer } from "./versions.ts";
 import { findFreePort } from "./net-util.ts";
 import { syncAddons, type AddonJarRef } from "./addons.ts";
 import { dataDir } from "./platform.ts";
+import {
+  parseWorldConfig,
+  worldConfigProperties,
+  type WorldConfig,
+} from "./world-config.ts";
 
 export interface ServerOptions {
   javaPath: string;
@@ -29,6 +34,13 @@ export interface ServerOptions {
   memoryMb?: number;
   port?: number;
   motd?: string;
+  /**
+   * The host's world settings (see world-config.ts), written to
+   * server.properties only the first time it's created for this world —
+   * they take effect as a world is created, and are left alone once it's
+   * resumed. Omitted means the vanilla defaults.
+   */
+  worldConfig?: WorldConfig;
   onLog?: (line: string) => void;
 }
 
@@ -80,6 +92,7 @@ export async function startServer(opts: ServerOptions): Promise<ServerHandle> {
         // check still runs so player identities stay verified.
         "online-mode=true",
         "enable-status=true",
+        ...worldConfigProperties(opts.worldConfig ?? parseWorldConfig()),
         "",
       ].join("\n"),
     );

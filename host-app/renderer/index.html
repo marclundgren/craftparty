@@ -41,6 +41,25 @@
         <label for="world-name">Name your world</label>
         <input id="world-name" type="text" maxlength="32" placeholder="e.g. Dragon Cave" autocomplete="off" />
         <p id="world-name-hint" class="hint" hidden></p>
+
+        <label for="difficulty">Difficulty</label>
+        <!-- Values are server.properties' own, listed in
+             host-engine/src/world-config.ts; "Medium" is called normal
+             there. Anything not on that list is refused at start. -->
+        <select id="difficulty">
+          <option value="peaceful">Peaceful — no monsters</option>
+          <option value="easy" selected>Easy</option>
+          <option value="normal">Medium</option>
+          <option value="hard">Hard</option>
+        </select>
+
+        <label class="check">
+          <input id="hardcore" type="checkbox" />
+          Hardcore — the world locks forever when you die
+        </label>
+
+        <label for="seed">Seed</label>
+        <input id="seed" type="text" maxlength="64" placeholder="Leave blank for a random world" autocomplete="off" />
       </div>
 
       <label class="check">
