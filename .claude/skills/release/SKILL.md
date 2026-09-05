@@ -25,9 +25,10 @@ Then run what CI can't:
 
 ```bash
 node --experimental-strip-types --test host-engine/src/worlds.test.ts
+node --experimental-strip-types --test host-engine/src/world-config.test.ts
 node --experimental-strip-types --test host-app/src/settings.test.ts
 node --experimental-strip-types --experimental-test-module-mocks --test host-app/src/updater.test.ts
-cd host-app && npm ci && npm run build      # the lockfile must resolve; CI runs npm ci
+cd host-app && npm ci && npm run typecheck && npm run build   # lockfile must resolve; CI runs npm ci
 ```
 
 ## 2. Choose the version

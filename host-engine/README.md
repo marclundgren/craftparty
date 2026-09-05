@@ -41,8 +41,17 @@ Worlds are permanent by default and independent of any one party:
   removal path, and the app puts a native confirmation dialog in front of
   it.
 
+A world's difficulty, hardcore flag and seed are chosen as it is created.
+They are server.properties keys, so `world-config.ts` holds the one table
+of which settings exist, which property each writes, and the values
+Minecraft accepts — the `Difficulty` type is derived from that table, and
+`parseWorldConfig()` checks the UI's input against it and throws rather
+than coercing an unknown value to a default. Because they are only written
+when server.properties is first created, resuming a world leaves whatever
+it was made with alone.
+
 ```
-node --test src/worlds.test.ts
+node --test src/worlds.test.ts src/world-config.test.ts
 ```
 
 ## Vertical-slice smoke test

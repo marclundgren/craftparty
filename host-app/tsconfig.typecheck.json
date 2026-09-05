@@ -1,0 +1,27 @@
+{
+  // Type checking only — nothing is emitted, and esbuild does the actual
+  // builds. Deliberately NOT named tsconfig.json: esbuild picks that one
+  // up automatically, and its compilerOptions would then start steering
+  // the bundle that ships.
+  //
+  // "module": "preserve" matches how these files really run — Node strips
+  // the types and loads them as ESM — without making the check depend on
+  // each package's "type" field.
+  "compilerOptions": {
+    "target": "es2023",
+    "lib": ["es2023"],
+    "module": "preserve",
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "types": ["node", "electron"]
+  },
+  "include": [
+    "src/**/*.ts",
+    "../host-engine/src/**/*.ts",
+    "../preflight/src/**/*.ts"
+  ]
+}

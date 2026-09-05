@@ -6,6 +6,7 @@
   "main": "dist/main.cjs",
   "scripts": {
     "build": "esbuild src/main.ts --bundle --platform=node --format=cjs --external:electron --external:electron-updater --outfile=dist/main.cjs && esbuild src/preload.ts --bundle --platform=node --format=cjs --external:electron --outfile=dist/preload.cjs",
+    "typecheck": "tsc -p tsconfig.typecheck.json",
     "start": "npm run build && electron .",
     "dist": "npm run build && electron-builder --publish never"
   },
@@ -15,7 +16,8 @@
   "devDependencies": {
     "electron": "^38.1.0",
     "electron-builder": "^26.15.3",
-    "esbuild": "^0.25.0"
+    "esbuild": "^0.25.0",
+    "typescript": "^5.9.3"
   },
   "allowScripts": {
     "electron@38.8.6": true,

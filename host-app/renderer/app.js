@@ -471,9 +471,14 @@ startBtn.addEventListener("click", async () => {
     acceptEula: eula.checked,
     remote: remote.checked,
     addonIds: selectedAddonIds(),
-    difficulty: difficultySelect.value,
-    hardcore: hardcoreBox.checked,
-    seed: seedInput.value.trim(),
+    // Only read on a brand-new world. The values must be ones
+    // host-engine/src/world-config.ts lists — it rejects anything else
+    // rather than quietly starting a world nobody asked for.
+    worldConfig: {
+      difficulty: difficultySelect.value,
+      hardcore: hardcoreBox.checked,
+      seed: seedInput.value.trim(),
+    },
   });
   if (result.error) {
     rememberSection(setup);

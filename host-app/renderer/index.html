@@ -43,6 +43,9 @@
         <p id="world-name-hint" class="hint" hidden></p>
 
         <label for="difficulty">Difficulty</label>
+        <!-- Values are server.properties' own, listed in
+             host-engine/src/world-config.ts; "Medium" is called normal
+             there. Anything not on that list is refused at start. -->
         <select id="difficulty">
           <option value="easy" selected>Easy</option>
           <option value="normal">Medium</option>

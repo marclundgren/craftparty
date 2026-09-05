@@ -10,7 +10,10 @@ import {
   type PartyHandle,
   type PartyOptions,
 } from "../../host-engine/src/party.ts";
-import type { Difficulty } from "../../host-engine/src/server.ts";
+import {
+  parseWorldConfig,
+  type WorldConfigInput,
+} from "../../host-engine/src/world-config.ts";
 import { joinParty, type JoinHandle } from "../../host-engine/src/joiner.ts";
 import {
   createWorld,
@@ -107,25 +110,6 @@ interface RegistryAddon {
 }
 
 let addonsCache: RegistryAddon[] | null = null;
-
-const DIFFICULTIES = new Set<Difficulty>(["peaceful", "easy", "normal", "hard"]);
-
-/**
- * The renderer sends these as plain strings; treat them as untrusted
- * before they land in server.properties (a stray newline could otherwise
- * inject extra properties).
- */
-function sanitizeDifficulty(value: unknown): Difficulty | undefined {
-  return typeof value === "string" && DIFFICULTIES.has(value as Difficulty)
-    ? (value as Difficulty)
-    : undefined;
-}
-
-function sanitizeSeed(value: unknown): string | undefined {
-  if (typeof value !== "string") return undefined;
-  const clean = value.replace(/[\r\n]/g, "").trim();
-  return clean || undefined;
-}
 
 async function fetchAddons(): Promise<RegistryAddon[]> {
   if (addonsCache) return addonsCache;
@@ -317,10 +301,8 @@ ipcMain.handle(
       acceptEula: boolean;
       remote: boolean;
       addonIds?: string[];
-      /** World-generation settings; only take effect on a brand-new world. */
-      difficulty?: string;
-      hardcore?: boolean;
-      seed?: string;
+      /** Chosen in the UI; only takes effect on a brand-new world. */
+      worldConfig?: WorldConfigInput;
     },
   ) => {
     if (party || starting) return { error: "A party is already running." };
@@ -330,7 +312,12 @@ ipcMain.handle(
     // runs before the start proper — a name clash is something for the
     // host to fix, not a failure worth a diagnostic report.
     let world;
+    let worldConfig;
     try {
+      // Check the settings against world-config.ts before anything hits
+      // the disk, so a value the engine doesn't recognise can't leave an
+      // empty world directory behind.
+      worldConfig = parseWorldConfig(opts.worldConfig);
       world = opts.worldId
         ? await getWorld(opts.worldId)
         : await createWorld(opts.worldName ?? "");
@@ -358,9 +345,7 @@ ipcMain.handle(
         mode: "independent",
         remote: opts.remote,
         addons: addonJars,
-        difficulty: sanitizeDifficulty(opts.difficulty),
-        hardcore: !!opts.hardcore,
-        seed: sanitizeSeed(opts.seed),
+        worldConfig,
         onPhase: (p) => {
           phase = p;
           send("phase", p);

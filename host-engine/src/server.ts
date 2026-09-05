@@ -9,9 +9,11 @@ import { resolveLatestFabricServer, type FabricServer } from "./versions.ts";
 import { findFreePort } from "./net-util.ts";
 import { syncAddons, type AddonJarRef } from "./addons.ts";
 import { dataDir } from "./platform.ts";
-
-/** Mirrors the values server.properties accepts for `difficulty`. */
-export type Difficulty = "peaceful" | "easy" | "normal" | "hard";
+import {
+  parseWorldConfig,
+  worldConfigProperties,
+  type WorldConfig,
+} from "./world-config.ts";
 
 export interface ServerOptions {
   javaPath: string;
@@ -33,14 +35,12 @@ export interface ServerOptions {
   port?: number;
   motd?: string;
   /**
-   * World-generation settings, written to server.properties only the
-   * first time it's created for this world — they take effect as a world
-   * is created, and are meaningless (and left alone) once it's resumed.
+   * The host's world settings (see world-config.ts), written to
+   * server.properties only the first time it's created for this world —
+   * they take effect as a world is created, and are left alone once it's
+   * resumed. Omitted means the vanilla defaults.
    */
-  difficulty?: Difficulty;
-  hardcore?: boolean;
-  /** Blank/undefined lets Minecraft pick a random seed, same as vanilla. */
-  seed?: string;
+  worldConfig?: WorldConfig;
   onLog?: (line: string) => void;
 }
 
@@ -92,9 +92,7 @@ export async function startServer(opts: ServerOptions): Promise<ServerHandle> {
         // check still runs so player identities stay verified.
         "online-mode=true",
         "enable-status=true",
-        `difficulty=${opts.difficulty ?? "easy"}`,
-        `hardcore=${opts.hardcore ? "true" : "false"}`,
-        `level-seed=${opts.seed ?? ""}`,
+        ...worldConfigProperties(opts.worldConfig ?? parseWorldConfig()),
         "",
       ].join("\n"),
     );
