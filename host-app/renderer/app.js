@@ -218,6 +218,118 @@ eula.addEventListener("change", refreshChoice);
 
 refreshWorlds();
 
+// ---- updates ----
+// Every transition is decided in the main process; this only renders the
+// state it is handed and offers the one action that makes sense next.
+const updateText = $("update-text");
+const updateAction = $("update-action");
+const updateNote = $("update-note");
+const updateAutoLabel = $("update-auto-label");
+const autoUpdateBox = $("auto-update");
+
+function renderUpdate(state) {
+  if (!state) return;
+  const version = state.currentVersion;
+  const next = state.latestVersion;
+  autoUpdateBox.checked = state.autoUpdate;
+  // Offering a switch the platform can't honour is worse than no switch.
+  updateAutoLabel.hidden = state.status === "unsupported" || !state.selfInstall;
+
+  let text = `Craftparty ${version}`;
+  let action = null;
+  switch (state.status) {
+    case "unsupported":
+      // A build that can't replace itself can still say where to get the
+      // new one; a development run has nothing useful to offer.
+      if (!state.selfInstall) action = ["Get updates ↗", openReleases];
+      break;
+    case "checking":
+      text = `Craftparty ${version} · checking for updates…`;
+      break;
+    case "current":
+      text = `Craftparty ${version} · up to date`;
+      action = ["Check again", checkForUpdates];
+      break;
+    case "available":
+      text = `Craftparty ${next} is available`;
+      // Where Craftparty can't install an update itself, the honest
+      // action is handing the host the download page.
+      action = state.selfInstall
+        ? ["Download it", downloadUpdate]
+        : ["Get it ↗", openReleases];
+      break;
+    case "downloading":
+      text = `Downloading Craftparty ${next}… ${state.percent}%`;
+      break;
+    case "ready":
+      text = `Craftparty ${next} installs next time you open the app`;
+      action = ["Install now", installUpdate];
+      break;
+    case "error":
+      text = `Craftparty ${version} · couldn't check for updates`;
+      action = ["Try again", checkForUpdates];
+      break;
+  }
+
+  updateText.textContent = text;
+  updateAction.hidden = action === null;
+  if (action) {
+    updateAction.textContent = action[0];
+    updateAction.disabled = false;
+    updateAction.onclick = action[1];
+  }
+  // The note explains the unusual cases — a platform that can't
+  // self-install, or why a check failed. Nothing to say most of the time.
+  const note =
+    state.status === "error" ||
+    (!state.selfInstall && (state.status === "available" || state.status === "unsupported"))
+      ? state.note
+      : null;
+  // Updater errors can be paragraphs of protocol detail; one line of it
+  // is enough to act on without shoving the rest of the app down.
+  updateNote.textContent = note ? trim(note, 150) : "";
+  updateNote.hidden = !note;
+}
+
+function trim(text, max) {
+  return text.length > max ? `${text.slice(0, max - 1).trimEnd()}…` : text;
+}
+
+async function checkForUpdates() {
+  updateAction.disabled = true;
+  renderUpdate(await craftparty.checkForUpdates());
+}
+
+async function downloadUpdate() {
+  updateAction.disabled = true;
+  renderUpdate(await craftparty.downloadUpdate());
+}
+
+async function openReleases() {
+  await craftparty.openReleases();
+}
+
+// Installing restarts the app; the main process refuses while a world or
+// a connection is live, and says so here rather than silently doing it.
+async function installUpdate() {
+  updateAction.disabled = true;
+  const result = await craftparty.installUpdate();
+  updateAction.disabled = false;
+  if (result?.error) {
+    updateNote.textContent = trim(result.error, 150);
+    updateNote.hidden = false;
+  }
+}
+
+autoUpdateBox.addEventListener("change", async () => {
+  autoUpdateBox.disabled = true;
+  renderUpdate(await craftparty.setAutoUpdate(autoUpdateBox.checked));
+  autoUpdateBox.disabled = false;
+});
+
+craftparty.onUpdateState(renderUpdate);
+craftparty.updateState().then(renderUpdate);
+
 craftparty.onPhase((phase) => {
   const friendly = friendlyPhase(phase);
   $("phase").textContent = friendly;

@@ -18,6 +18,15 @@ import {
   recordPlayed,
 } from "../../host-engine/src/worlds.ts";
 import { reapStaleChildren } from "../../host-engine/src/pids.ts";
+import {
+  check as checkForUpdates,
+  download as downloadUpdate,
+  initUpdater,
+  installNow,
+  openReleasesPage,
+  setAutoUpdate,
+  updateState,
+} from "./updater.ts";
 
 let win: BrowserWindow | null = null;
 let party: PartyHandle | null = null;
@@ -169,6 +178,32 @@ ipcMain.handle("get-addons", async () => {
   } catch (err) {
     return { error: err instanceof Error ? err.message : String(err) };
   }
+});
+
+// ---- updates ----
+// The renderer only ever reflects this state; every transition is driven
+// by the main process and pushed down through the "update-state" channel.
+ipcMain.handle("update-state", () => updateState());
+ipcMain.handle("check-for-updates", () => checkForUpdates());
+ipcMain.handle("download-update", () => downloadUpdate());
+ipcMain.handle("set-auto-update", (_event, on: boolean) => setAutoUpdate(!!on));
+ipcMain.handle("open-releases", () => {
+  openReleasesPage();
+  return { ok: true };
+});
+
+// Installing restarts the app, which would drop everyone out of a running
+// world mid-block. Refuse while anything is live and say why — an update
+// that is already downloaded loses nothing by waiting for the next quit.
+ipcMain.handle("install-update", () => {
+  if (party) {
+    return { error: "Stop the party first — installing restarts Craftparty." };
+  }
+  if (joined) {
+    return { error: "Leave the party first — installing restarts Craftparty." };
+  }
+  installNow();
+  return { ok: true };
 });
 
 ipcMain.handle("open-marketplace", () => {
@@ -367,6 +402,9 @@ app.whenReady().then(() => {
     for (const r of reaped) console.log(`reaped stale child: ${r}`);
   });
   createWindow();
+  // Fire-and-forget: a machine that can't reach GitHub still gets a
+  // working app, just without update news.
+  void initUpdater((state) => send("update-state", state));
 
   // Self-test hook: --screenshot=/path/out.png captures the window and exits.
   const shotArg = process.argv.find((a) => a.startsWith("--screenshot="));
