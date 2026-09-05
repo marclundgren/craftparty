@@ -58,13 +58,18 @@
         "AppImage"
       ],
       "category": "Game",
-      "artifactName": "Craftparty-${version}.${ext}"
+      "artifactName": "Craftparty-${version}.${ext}",
+      "icon": "build/icons"
     },
     "executableName": "craftparty",
     "publish": {
       "provider": "github",
       "owner": "marclundgren",
-      "repo": "craftparty"
+      "repo": "craftparty",
+      "releaseType": "release"
+    },
+    "releaseInfo": {
+      "releaseName": "Craftparty 0.4.0 — updates itself"
     }
   },
   "repository": {

@@ -13,6 +13,42 @@ node --experimental-strip-types --test src/settings.test.ts
 node --experimental-strip-types --experimental-test-module-mocks --test src/updater.test.ts
 ```
 
+## Icon
+
+`build/icon.svg` is the source: an original grass-block-in-a-party-hat in
+the app's own palette. It is deliberately not a Minecraft asset —
+Craftparty has no licence to Mojang's artwork and disclaims association
+with it on every release.
+
+Two rendered forms are checked in, both generated from that SVG:
+`build/icon.png` (1024px, which electron-builder turns into the Windows
+`.ico` and macOS `.icns`) and `build/icons/<size>x<size>.png` for Linux,
+where desktop environments want real per-size art rather than a
+downscaled 1024. Re-render both after editing the SVG — any renderer
+will do, including Inkscape:
+
+```bash
+inkscape build/icon.svg -w 1024 -h 1024 -o build/icon.png
+for s in 16 32 48 64 128 256 512 1024; do
+  inkscape build/icon.svg -w $s -h $s -o "build/icons/${s}x${s}.png"
+done
+```
+
+A packaged app takes its icon from the bundle; a dev run has no bundle,
+so `main.ts` points Electron at `build/icon.png` directly and calls
+`app.setName("Craftparty")` — otherwise `npm start` shows the stock
+Electron icon labelled `@craftparty/host-app`.
+
+## Releases
+
+`.claude/skills/release/SKILL.md` is the runbook — run `/release`. In
+short: `CHANGELOG.md` is written first, its top section becomes
+`build/release-notes.md` (which electron-builder posts as the GitHub
+release body), the version in this `package.json` is bumped to match the
+tag, and pushing `vX.Y.Z` builds and **publishes** all three platforms.
+Releases are `releaseType: "release"` on purpose: electron-updater cannot
+see draft releases, so a draft ships to nobody.
+
 ## Updates
 
 Craftparty updates itself from its own GitHub releases. Tagging `v*` runs

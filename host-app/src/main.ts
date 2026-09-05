@@ -1,5 +1,6 @@
 import { app, BrowserWindow, dialog, ipcMain, clipboard, shell } from "electron";
 import os from "node:os";
+import fs from "node:fs";
 import fsp from "node:fs/promises";
 import path from "node:path";
 import { dataDir } from "../../host-engine/src/platform.ts";
@@ -28,6 +29,8 @@ import {
   updateState,
 } from "./updater.ts";
 
+app.setName("Craftparty");
+
 let win: BrowserWindow | null = null;
 let party: PartyHandle | null = null;
 let joined: JoinHandle | null = null;
@@ -48,6 +51,18 @@ if (selftestRole) {
   app.disableHardwareAcceleration();
 }
 
+/**
+ * Packaged builds get their icon from the bundle that electron-builder
+ * makes out of build/icon.png. A dev run has no bundle, so point Electron
+ * at the same source file — otherwise `npm start` shows the stock Electron
+ * icon and the package name in the dock.
+ */
+const devIcon = (): string | undefined => {
+  if (app.isPackaged) return undefined;
+  const icon = path.join(__dirname, "..", "build", "icon.png");
+  return fs.existsSync(icon) ? icon : undefined;
+};
+
 function createWindow() {
   win = new BrowserWindow({
     width: 760,
@@ -55,6 +70,7 @@ function createWindow() {
     minWidth: 560,
     minHeight: 480,
     title: "Craftparty",
+    icon: devIcon(),
     backgroundColor: "#a5d9f2",
     webPreferences: {
       preload: path.join(__dirname, "preload.cjs"),
