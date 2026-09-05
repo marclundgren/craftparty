@@ -15,6 +15,9 @@ const worldsList = $("worlds-list");
 const newWorldBox = $("new-world-box");
 const worldName = $("world-name");
 const worldNameHint = $("world-name-hint");
+const difficultySelect = $("difficulty");
+const hardcoreBox = $("hardcore");
+const seedInput = $("seed");
 const remote = $("remote");
 const remoteHint = $("remote-hint");
 const eula = $("eula");
@@ -468,6 +471,9 @@ startBtn.addEventListener("click", async () => {
     acceptEula: eula.checked,
     remote: remote.checked,
     addonIds: selectedAddonIds(),
+    difficulty: difficultySelect.value,
+    hardcore: hardcoreBox.checked,
+    seed: seedInput.value.trim(),
   });
   if (result.error) {
     rememberSection(setup);

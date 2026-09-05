@@ -11,6 +11,9 @@ contextBridge.exposeInMainWorld("craftparty", {
     acceptEula: boolean;
     remote: boolean;
     addonIds: string[];
+    difficulty?: string;
+    hardcore?: boolean;
+    seed?: string;
   }) => ipcRenderer.invoke("start-party", opts),
   stopParty: () => ipcRenderer.invoke("stop-party"),
   joinParty: (inviteCode: string) => ipcRenderer.invoke("join-party", inviteCode),

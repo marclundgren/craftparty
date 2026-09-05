@@ -10,6 +10,7 @@ import {
   type PartyHandle,
   type PartyOptions,
 } from "../../host-engine/src/party.ts";
+import type { Difficulty } from "../../host-engine/src/server.ts";
 import { joinParty, type JoinHandle } from "../../host-engine/src/joiner.ts";
 import {
   createWorld,
@@ -106,6 +107,25 @@ interface RegistryAddon {
 }
 
 let addonsCache: RegistryAddon[] | null = null;
+
+const DIFFICULTIES = new Set<Difficulty>(["peaceful", "easy", "normal", "hard"]);
+
+/**
+ * The renderer sends these as plain strings; treat them as untrusted
+ * before they land in server.properties (a stray newline could otherwise
+ * inject extra properties).
+ */
+function sanitizeDifficulty(value: unknown): Difficulty | undefined {
+  return typeof value === "string" && DIFFICULTIES.has(value as Difficulty)
+    ? (value as Difficulty)
+    : undefined;
+}
+
+function sanitizeSeed(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const clean = value.replace(/[\r\n]/g, "").trim();
+  return clean || undefined;
+}
 
 async function fetchAddons(): Promise<RegistryAddon[]> {
   if (addonsCache) return addonsCache;
@@ -297,6 +317,10 @@ ipcMain.handle(
       acceptEula: boolean;
       remote: boolean;
       addonIds?: string[];
+      /** World-generation settings; only take effect on a brand-new world. */
+      difficulty?: string;
+      hardcore?: boolean;
+      seed?: string;
     },
   ) => {
     if (party || starting) return { error: "A party is already running." };
@@ -334,6 +358,9 @@ ipcMain.handle(
         mode: "independent",
         remote: opts.remote,
         addons: addonJars,
+        difficulty: sanitizeDifficulty(opts.difficulty),
+        hardcore: !!opts.hardcore,
+        seed: sanitizeSeed(opts.seed),
         onPhase: (p) => {
           phase = p;
           send("phase", p);

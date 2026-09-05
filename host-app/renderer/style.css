@@ -146,6 +146,22 @@ input[type="text"]:focus {
   border-color: var(--torch);
 }
 
+select {
+  width: 100%;
+  font-size: 1rem;
+  padding: 0.6rem 0.75rem;
+  border: 2px solid #d8cfb8;
+  border-radius: 4px;
+  background: #fff;
+  color: var(--ink);
+}
+
+select:focus {
+  outline: 3px solid var(--torch);
+  outline-offset: 1px;
+  border-color: var(--torch);
+}
+
 .check {
   display: flex;
   align-items: center;
