@@ -51,8 +51,12 @@ one thing this release is about), adding anything from the log that
 players would notice and dropping anything they wouldn't.
 
 Then generate the release body — electron-builder reads
-`host-app/build/release-notes.md` out of the build resources on its own
-and posts it as the GitHub release body:
+`host-app/build/release-notes.md` and posts it as the GitHub release
+body. It finds that file only because `build.releaseInfo.releaseNotesFile`
+in `host-app/package.json` points at it; don't remove that key. Despite
+what electron-builder's own schema says, its fallback path is
+`release-notes.md` next to `package.json`, *not* in the build resources,
+so without the key the body silently ships empty. The file holds:
 
 - The new section's bullets, verbatim.
 - A `## Downloads` list: `Craftparty-Setup-X.Y.Z.exe`,

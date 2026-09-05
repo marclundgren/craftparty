@@ -11,9 +11,14 @@ electron-builder posts that as the GitHub release body. See
 
 ## Unreleased
 
+## 0.5.0 — its own icon
+
 - 🎨 **Craftparty has a face.** The app ships its own icon — a grass block
   in a party hat — instead of the stock Electron cog, on Windows, macOS
   and Linux, and in the dock while you're running it from source.
+- 🚚 **Automatic updates start working here.** 0.4.0 was published in a
+  form the updater couldn't see, so it never reached anyone. Install this
+  one by hand and later versions arrive on their own.
 
 ## 0.4.0 — updates itself
 
