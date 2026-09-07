@@ -43,20 +43,18 @@
         <p id="world-name-hint" class="hint" hidden></p>
 
         <label for="difficulty">Difficulty</label>
-        <!-- Values are server.properties' own, listed in
-             host-engine/src/world-config.ts; "Medium" is called normal
-             there. Anything not on that list is refused at start. -->
+        <!-- Values (other than "hardcore") are server.properties' own,
+             listed in host-engine/src/world-config.ts; "Normal" is called
+             normal there. Anything not on that list is refused at start.
+             "hardcore" is a UI-only shorthand: app.js translates it into
+             difficulty "hard" plus hardcore true before sending the config. -->
         <select id="difficulty">
           <option value="peaceful">Peaceful — no monsters</option>
           <option value="easy" selected>Easy</option>
-          <option value="normal">Medium</option>
+          <option value="normal">Normal</option>
           <option value="hard">Hard</option>
+          <option value="hardcore">Hardcore — the world locks forever when you die</option>
         </select>
-
-        <label class="check">
-          <input id="hardcore" type="checkbox" />
-          Hardcore — the world locks forever when you die
-        </label>
 
         <label for="seed">Seed</label>
         <input id="seed" type="text" maxlength="64" placeholder="Leave blank for a random world" autocomplete="off" />

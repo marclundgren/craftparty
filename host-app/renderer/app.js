@@ -16,7 +16,6 @@ const newWorldBox = $("new-world-box");
 const worldName = $("world-name");
 const worldNameHint = $("world-name-hint");
 const difficultySelect = $("difficulty");
-const hardcoreBox = $("hardcore");
 const seedInput = $("seed");
 const remote = $("remote");
 const remoteHint = $("remote-hint");
@@ -473,12 +472,12 @@ startBtn.addEventListener("click", async () => {
     addonIds: selectedAddonIds(),
     // Only read on a brand-new world. The values must be ones
     // host-engine/src/world-config.ts lists — it rejects anything else
-    // rather than quietly starting a world nobody asked for.
-    worldConfig: {
-      difficulty: difficultySelect.value,
-      hardcore: hardcoreBox.checked,
-      seed: seedInput.value.trim(),
-    },
+    // rather than quietly starting a world nobody asked for. "hardcore"
+    // is a UI-only option, not one of those values, so it's translated
+    // here into the difficulty/hardcore pair the engine expects.
+    worldConfig: difficultySelect.value === "hardcore"
+      ? { difficulty: "hard", hardcore: true, seed: seedInput.value.trim() }
+      : { difficulty: difficultySelect.value, hardcore: false, seed: seedInput.value.trim() },
   });
   if (result.error) {
     rememberSection(setup);
