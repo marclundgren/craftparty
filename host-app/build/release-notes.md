@@ -1,17 +1,13 @@
-- 🌍 **Set the difficulty before you start.** New worlds ask how tough you
-  want them — Peaceful for no monsters at all, then Easy, Medium or Hard.
-- 💀 **Hardcore, if you dare.** One life each: when you die, the world
-  locks for good. Off unless you tick it.
-- 🌱 **Bring your own seed.** Type in a seed to play a world someone told
-  you about, or leave it blank and get one nobody has seen before.
-- 🔒 **Your saved worlds are left alone.** These are chosen as a world is
-  made, so carrying on with an old world keeps exactly what it started
-  with.
+- 🎚️ **Hardcore is its own difficulty now.** Pick it straight from the
+  difficulty list instead of ticking a separate box — same effect, one
+  less control.
+- 📝 **Medium is now Normal**, matching what it's actually called under
+  the hood.
 
 ## Downloads
-- **Windows:** Craftparty-Setup-0.6.0.exe
-- **macOS:** Craftparty-0.6.0.dmg
-- **Linux:** Craftparty-0.6.0.AppImage
+- **Windows:** Craftparty-Setup-0.6.1.exe
+- **macOS:** Craftparty-0.6.1.dmg
+- **Linux:** Craftparty-0.6.1.AppImage
 
 ## Heads up: unsigned beta builds
 These builds are not code-signed yet, so your computer will warn you the first time:

@@ -11,6 +11,14 @@ electron-builder posts that as the GitHub release body. See
 
 ## Unreleased
 
+## 0.6.1 — hardcore's own line
+
+- 🎚️ **Hardcore is its own difficulty now.** Pick it straight from the
+  difficulty list instead of ticking a separate box — same effect, one
+  less control.
+- 📝 **Medium is now Normal**, matching what it's actually called under
+  the hood.
+
 ## 0.6.0 — peaceful or hardcore
 
 - 🌍 **Set the difficulty before you start.** New worlds ask how tough you
