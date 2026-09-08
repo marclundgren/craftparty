@@ -26,10 +26,25 @@ export function encodeInvite(invite: Invite): string {
 }
 
 export function decodeInvite(code: string): Invite {
-  const invite = JSON.parse(
-    Buffer.from(code.trim(), "base64url").toString("utf8"),
-  ) as Invite;
-  if (invite.v !== 1 || !invite.controlPlaneUrl || !invite.authKey) {
+  // Anything that isn't an invite lands here — half a code, a chat app's
+  // smart quotes, a link someone pasted by mistake. They all get the same
+  // answer rather than a JSON parser's.
+  let invite: Invite;
+  try {
+    invite = JSON.parse(
+      Buffer.from(code.trim(), "base64url").toString("utf8"),
+    ) as Invite;
+  } catch {
+    throw new Error("Not a valid Craftparty invite code");
+  }
+  if (
+    invite?.v !== 1 ||
+    !invite.controlPlaneUrl ||
+    !invite.authKey ||
+    !invite.party ||
+    !invite.server?.host ||
+    !invite.server?.port
+  ) {
     throw new Error("Not a valid Craftparty invite code");
   }
   return invite;

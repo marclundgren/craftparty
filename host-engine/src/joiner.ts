@@ -7,6 +7,14 @@ import { socks5Connect } from "./socks.ts";
 import { startTailscaled, type TailscaledHandle } from "./tailscaled.ts";
 
 export interface JoinOptions {
+  /**
+   * Name for this connection's tailscaled state directory. Several
+   * parties can be joined at once, and startTailscaled wipes the state
+   * dir it is given — so two live connections must never be handed the
+   * same name. Callers holding more than one pass the party's id;
+   * defaults to a slug of the party name.
+   */
+  stateName?: string;
   onPhase?: (phase: string) => void;
   onLog?: (source: "tailscale", line: string) => void;
 }
@@ -41,7 +49,7 @@ export async function joinParty(
     bins,
     // Per-party state: joining two different parties (or a selftest
     // joining alongside a real one) must not share a tailscaled identity.
-    name: `joiner-${invite.party.toLowerCase().replace(/[^a-z0-9-]/g, "-")}`,
+    name: `joiner-${(opts.stateName ?? invite.party).toLowerCase().replace(/[^a-z0-9-]/g, "-")}`,
     socks5Port: socksPort,
     onLog: (l) => opts.onLog?.("tailscale", l),
   });

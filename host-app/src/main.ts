@@ -16,6 +16,18 @@ import {
 } from "../../host-engine/src/world-config.ts";
 import { joinParty, type JoinHandle } from "../../host-engine/src/joiner.ts";
 import {
+  forgetParty,
+  getParty,
+  listParties,
+  recordJoined,
+  rememberParty,
+  type JoinedParty,
+} from "../../host-engine/src/parties.ts";
+import {
+  pingControlPlane,
+  pingMinecraft,
+} from "../../host-engine/src/party-status.ts";
+import {
   createWorld,
   deleteWorld,
   getWorld,
@@ -37,8 +49,16 @@ app.setName("Craftparty");
 
 let win: BrowserWindow | null = null;
 let party: PartyHandle | null = null;
-let joined: JoinHandle | null = null;
 let starting = false;
+
+/**
+ * Every party this computer is currently connected to, by party id.
+ * Friends can be in several worlds at once — each connection is its own
+ * tailscaled and its own loopback proxy — so this is a map, not a slot.
+ * The saved list of parties (including the ones nobody is connected to)
+ * lives on disk in host-engine/src/parties.ts.
+ */
+const joins = new Map<string, JoinHandle>();
 
 // Self-test instances need isolated Chromium profiles (two app instances
 // otherwise deadlock on the shared userData singleton lock) and no GPU.
@@ -70,9 +90,13 @@ const devIcon = (): string | undefined => {
 function createWindow() {
   win = new BrowserWindow({
     width: 760,
-    height: 640,
+    // Tall enough that a card with a few saved worlds needs no scrolling at
+    // all. Past that the card scrolls inside itself — the action button is
+    // pinned either way (see .card-split in the stylesheet), so the minimum
+    // only has to leave the scrolling middle something to show.
+    height: 720,
     minWidth: 560,
-    minHeight: 480,
+    minHeight: 520,
     title: "Craftparty",
     icon: devIcon(),
     backgroundColor: "#a5d9f2",
@@ -219,8 +243,13 @@ ipcMain.handle("install-update", () => {
   if (party) {
     return { error: "Stop the party first — installing restarts Craftparty." };
   }
-  if (joined) {
-    return { error: "Leave the party first — installing restarts Craftparty." };
+  if (joins.size > 0) {
+    return {
+      error:
+        joins.size === 1
+          ? "Leave the party first — installing restarts Craftparty."
+          : "Leave your parties first — installing restarts Craftparty.",
+    };
   }
   installNow();
   return { ok: true };
@@ -385,16 +414,29 @@ ipcMain.handle("stop-party", async () => {
   return { ok: true, worldId, worldName };
 });
 
-ipcMain.handle("join-party", async (_event, inviteCode: string) => {
-  console.log(
-    `join-party invoked (joined=${!!joined} starting=${starting}) invite=${inviteCode.slice(0, 12)}…`,
-  );
-  if (joined || starting) return { error: "Already connected to a party." };
+/**
+ * Connect to one saved party. Joining probes for free loopback ports
+ * (the SOCKS proxy, then the one Minecraft dials), and two of those
+ * racing would happily pick the same number — so connections take turns,
+ * and while one is in flight nothing else may claim the phase channel
+ * the progress screen reads.
+ */
+async function connectToParty(saved: JoinedParty) {
+  if (joins.has(saved.id)) {
+    return { error: `You're already in "${saved.name}".` };
+  }
+  if (starting) {
+    // `starting` is held by a host start too, not just another join.
+    return {
+      error: "Hang on — Craftparty is still getting another world ready.",
+    };
+  }
   starting = true;
   let phase: string | null = null;
   const logs: string[] = [];
   try {
-    joined = await joinParty(inviteCode, {
+    const handle = await joinParty(saved.inviteCode, {
+      stateName: saved.id,
       onPhase: (p) => {
         phase = p;
         send("phase", p);
@@ -405,19 +447,109 @@ ipcMain.handle("join-party", async (_event, inviteCode: string) => {
         send("log", source, line);
       },
     });
-    return { localPort: joined.localPort, partyName: joined.invite.party };
+    joins.set(saved.id, handle);
+    await recordJoined(saved.id).catch(() => {});
+    return {
+      partyId: saved.id,
+      partyName: saved.name,
+      localPort: handle.localPort,
+    };
   } catch (err) {
     return await reportFailure("join", phase, logs, err);
   } finally {
     starting = false;
   }
+}
+
+// Pasting an invite: remember the party first, so it stays in the list
+// (and can be retried or forgotten) even if this connection attempt
+// fails. A re-paste of a party already saved refreshes its invite.
+ipcMain.handle("join-party", async (_event, inviteCode: string) => {
+  let saved: JoinedParty;
+  try {
+    saved = await rememberParty(inviteCode);
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : String(err) };
+  }
+  console.log(
+    `join-party invoked (joined=${joins.size} starting=${starting}) party=${saved.id}`,
+  );
+  return await connectToParty(saved);
 });
 
-ipcMain.handle("leave-party", async () => {
-  if (!joined) return { ok: true };
-  await joined.stop();
-  joined = null;
+// Rejoining from the list: the invite never leaves the main process.
+ipcMain.handle("rejoin-party", async (_event, partyId: string) => {
+  try {
+    return await connectToParty(await getParty(partyId));
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : String(err) };
+  }
+});
+
+// Every party the friend has joined, connected or not. Deliberately
+// without the invite code: it carries the host's auth key, and nothing
+// in the renderer needs it — rejoining goes by id.
+ipcMain.handle("list-parties", async () => {
+  try {
+    const parties = await listParties();
+    return {
+      parties: parties.map((p) => ({
+        id: p.id,
+        name: p.name,
+        host: p.host,
+        port: p.port,
+        addedAt: p.addedAt,
+        lastJoinedAt: p.lastJoinedAt,
+        connected: joins.has(p.id),
+        localPort: joins.get(p.id)?.localPort ?? null,
+      })),
+    };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : String(err) };
+  }
+});
+
+// How is this party doing right now? Connected, that is a real
+// server-list ping through the proxy; otherwise the most that can be
+// asked is whether the host's control plane is still up.
+ipcMain.handle("check-party", async (_event, partyId: string) => {
+  const handle = joins.get(partyId);
+  if (handle) return await pingMinecraft("127.0.0.1", handle.localPort);
+  try {
+    const saved = await getParty(partyId);
+    return await pingControlPlane(saved.controlPlaneUrl);
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : String(err) };
+  }
+});
+
+// Leaving one party, or (with no id — the shutdown path) all of them.
+ipcMain.handle("leave-party", async (_event, partyId?: string) => {
+  const ids = partyId ? [partyId] : [...joins.keys()];
+  for (const id of ids) {
+    const handle = joins.get(id);
+    if (!handle) continue;
+    // Drop it from the map first: a stop that hangs must not leave the
+    // party looking joinable while its proxy is still winding down.
+    joins.delete(id);
+    await handle.stop().catch(() => {});
+  }
   return { ok: true };
+});
+
+// Forgetting only removes the party from the list — nothing on this
+// computer or the host's is touched. Being connected is the one thing
+// that blocks it; yanking someone out of a world they are playing is not
+// what "forget" should mean.
+ipcMain.handle("forget-party", async (_event, partyId: string) => {
+  if (joins.has(partyId)) {
+    return { error: "Leave this party before removing it from your list." };
+  }
+  try {
+    return { forgotten: await forgetParty(partyId) };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : String(err) };
+  }
 });
 
 ipcMain.handle("copy", (_event, text: string) => {
@@ -598,12 +730,16 @@ function armDualSelftest() {
         );
         const address = await poll(5 * 60_000, async () => {
           const s = await page().executeJavaScript(
-            `({ connected: !document.getElementById("join-running").hidden,
-                address: document.getElementById("join-address").value,
-                error: document.getElementById("join-error").textContent })`,
+            `(() => {
+              const row = document.querySelector(".party-row.connected");
+              return {
+                address: row?.querySelector(".party-address")?.value ?? "",
+                error: document.getElementById("join-error").textContent,
+              };
+            })()`,
           );
           if (s.error) throw new Error(`join failed: ${s.error}`);
-          return s.connected && s.address ? (s.address as string) : null;
+          return s.address ? (s.address as string) : null;
         });
         const port = Number(address.split(":")[1]);
         const net = await import("node:net");
@@ -623,7 +759,7 @@ function armDualSelftest() {
         const image = await page().capturePage();
         await fs.writeFile(`${file}-join.png`, image.toPNG());
         await page().executeJavaScript(
-          `document.getElementById("leave").click()`,
+          `document.querySelector(".party-row.connected .party-leave").click()`,
         );
         await new Promise((r) => setTimeout(r, 2000));
         await fs.writeFile(`${file}.done`, "ok");
@@ -653,8 +789,10 @@ let shuttingDown = false;
 async function shutDownEngines(): Promise<void> {
   if (party) await party.stop().catch(() => {});
   party = null;
-  if (joined) await joined.stop().catch(() => {});
-  joined = null;
+  for (const [id, handle] of joins) {
+    joins.delete(id);
+    await handle.stop().catch(() => {});
+  }
 }
 
 app.on("window-all-closed", async () => {
@@ -663,7 +801,7 @@ app.on("window-all-closed", async () => {
 });
 
 app.on("before-quit", (event) => {
-  if (shuttingDown || (!party && !joined)) return;
+  if (shuttingDown || (!party && joins.size === 0)) return;
   // Hold the quit open while the world saves; a stuck server escalates to
   // SIGTERM inside stop(), so this can't wait forever.
   event.preventDefault();

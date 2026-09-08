@@ -6,9 +6,8 @@ const progress = $("progress");
 const running = $("running");
 const joinSetup = $("join-setup");
 const joinProgress = $("join-progress");
-const joinRunning = $("join-running");
 const HOST_SECTIONS = [setup, progress, running];
-const JOIN_SECTIONS = [joinSetup, joinProgress, joinRunning];
+const JOIN_SECTIONS = [joinSetup, joinProgress];
 const netStatus = $("net-status");
 const worldsBox = $("worlds-box");
 const worldsList = $("worlds-list");
@@ -22,6 +21,30 @@ const remoteHint = $("remote-hint");
 const eula = $("eula");
 const startBtn = $("start");
 const setupError = $("setup-error");
+const worldSearch = $("world-search");
+const worldsCount = $("worlds-count");
+const worldsEmpty = $("worlds-empty");
+
+/**
+ * Rows per page. A card has exactly one scrolling region — its body — so
+ * the lists inside it must stay short enough not to bury what follows
+ * them; paging is how that happens without nesting a second scrollbar.
+ * Party rows carry a status line and an address, so fewer of them fit.
+ *
+ * Search and paging arrive together, at the first list that needs a
+ * second page: below that everything is already on screen, and both
+ * controls would be clutter asking to be understood.
+ */
+const PAGE_SIZE = { worlds: 5, parties: 4 };
+
+/** Which page each list is showing, zero-based. */
+const page = { worlds: 0, parties: 0 };
+
+/** Case-insensitive name match; blank query means everything. */
+function matching(items, query) {
+  const q = query.trim().toLowerCase();
+  return q ? items.filter((i) => i.name.toLowerCase().includes(q)) : items;
+}
 
 let netVerdict = null;
 
@@ -65,13 +88,73 @@ async function refreshWorlds(preferId) {
 
 function renderWorlds() {
   worldsBox.hidden = worlds.length === 0;
-  worldsList.replaceChildren();
-  for (const world of worlds) {
-    worldsList.append(worldRow(world));
-  }
-  if (worlds.length > 0) worldsList.append(newWorldRow());
+  worldSearch.hidden = worlds.length <= PAGE_SIZE.worlds;
+  // A box nobody can see must not go on filtering the list.
+  if (worldSearch.hidden) worldSearch.value = "";
+
+  const query = worldSearch.value;
+  const shown = matching(worlds, query);
+  worldsList.replaceChildren(...pageOf("worlds", shown).map(worldRow));
+  // Always there, never paged away: starting fresh is an action, not one
+  // of the saved worlds.
+  $("new-world-row").replaceChildren(newWorldRow());
+
+  worldsCount.textContent = countLabel(shown.length, worlds.length, query, "worlds");
+  showEmpty(worldsEmpty, shown.length, query, "worlds");
   refreshChoice();
 }
+
+/**
+ * The slice of `items` to draw, and the pager to go with it. Clamps the
+ * page first: a search that narrows the list can leave us past the end.
+ */
+function pageOf(list, items) {
+  const size = PAGE_SIZE[list];
+  const pages = Math.max(1, Math.ceil(items.length / size));
+  page[list] = Math.min(Math.max(page[list], 0), pages - 1);
+
+  const pager = $(`${list}-pager`);
+  pager.hidden = pages <= 1;
+  if (!pager.hidden) {
+    $(`${list}-page`).textContent = `Page ${page[list] + 1} of ${pages}`;
+    $(`${list}-prev`).disabled = page[list] === 0;
+    $(`${list}-next`).disabled = page[list] >= pages - 1;
+  }
+  return items.slice(page[list] * size, page[list] * size + size);
+}
+
+/** Wire a list's search box and pager to its renderer. */
+function wireList(list, render) {
+  $(`${list === "worlds" ? "world" : "party"}-search`).addEventListener(
+    "input",
+    () => {
+      page[list] = 0; // a new query always starts at the first result
+      render();
+    },
+  );
+  $(`${list}-prev`).addEventListener("click", () => {
+    page[list]--;
+    render();
+  });
+  $(`${list}-next`).addEventListener("click", () => {
+    page[list]++;
+    render();
+  });
+}
+
+/** "3 of 12" while searching, a plain total once the list needs paging. */
+function countLabel(shown, total, query, noun) {
+  if (query.trim()) return `${shown} of ${total}`;
+  return total > PAGE_SIZE[noun] ? `${total} ${noun}` : "";
+}
+
+function showEmpty(el, shown, query, noun) {
+  const empty = shown === 0 && query.trim();
+  el.hidden = !empty;
+  if (empty) el.textContent = `No ${noun} match “${query.trim()}”.`;
+}
+
+wireList("worlds", renderWorlds);
 
 function worldRow(world) {
   const row = document.createElement("div");
@@ -171,7 +254,9 @@ function refreshChoice() {
   // Highlight whatever the start button is actually about to do, so a
   // typed-in collision points at the world it will continue.
   const target = chosen ?? collision;
-  for (const row of worldsList.children) {
+  // Both the paged rows and the "Start a new world" row that sits outside
+  // the pager.
+  for (const row of worldsBox.querySelectorAll(".world-row")) {
     const selected = row.dataset.worldId === (target?.id ?? "");
     row.classList.toggle("selected", selected);
     row.querySelector("input[type=radio]").checked = selected;
@@ -524,40 +609,288 @@ $("stop").addEventListener("click", async () => {
 });
 
 // ---- join flow ----
+// The join tab is the list of every party this computer has joined —
+// connected or not — plus the box for pasting a new invite. Connections
+// are held by the main process, so this only ever draws what it is told
+// and asks for a fresh status when it wants one.
+const partiesBox = $("parties-box");
+const partiesList = $("parties-list");
+const partySearch = $("party-search");
+const partiesCount = $("parties-count");
+const partiesEmpty = $("parties-empty");
 const inviteInput = $("invite-input");
 const joinBtn = $("join");
 const joinError = $("join-error");
+
+let parties = [];
+/** Latest probe per party id: a PartyStatus, or "checking". */
+const statuses = new Map();
+
+async function refreshParties({ probe = true } = {}) {
+  const result = await craftparty.listParties();
+  if (result.error) {
+    joinError.textContent = result.error;
+    joinError.hidden = false;
+    return;
+  }
+  parties = result.parties ?? [];
+  // Forget status we were holding for parties that are no longer listed.
+  for (const id of [...statuses.keys()]) {
+    if (!parties.some((p) => p.id === id)) statuses.delete(id);
+  }
+  renderParties();
+  if (probe) await checkAllParties();
+}
+
+/**
+ * Ask about every party at once: hosts that are off take the full probe
+ * timeout to say so, and one of those must not delay the rest.
+ */
+function checkAllParties() {
+  return Promise.all(parties.map((p) => checkParty(p.id)));
+}
+
+async function checkParty(id) {
+  statuses.set(id, { state: "checking" });
+  paintStatus(id);
+  const result = await craftparty.checkParty(id);
+  // The list can move on (left, forgotten, rejoined) while we ask.
+  if (!parties.some((p) => p.id === id)) return;
+  statuses.set(
+    id,
+    result.error ? { state: "offline", detail: result.error } : result,
+  );
+  paintStatus(id);
+}
+
+function renderParties() {
+  partiesBox.hidden = parties.length === 0;
+  partySearch.hidden = parties.length <= PAGE_SIZE.parties;
+  if (partySearch.hidden) partySearch.value = "";
+
+  const query = partySearch.value;
+  const shown = matching(parties, query);
+  partiesList.replaceChildren(...pageOf("parties", shown).map(partyRow));
+  partiesCount.textContent = countLabel(
+    shown.length,
+    parties.length,
+    query,
+    "parties",
+  );
+  showEmpty(partiesEmpty, shown.length, query, "parties");
+}
+
+wireList("parties", renderParties);
+
+function partyRow(party) {
+  const status = statuses.get(party.id);
+  const row = document.createElement("div");
+  row.className = `party-row${party.connected ? " connected" : ""}`;
+  row.dataset.partyId = party.id;
+
+  const head = document.createElement("div");
+  head.className = "party-head";
+
+  const dot = document.createElement("span");
+  dot.className = `party-dot ${statusClass(party, status)}`;
+
+  const text = document.createElement("span");
+  text.className = "party-text";
+  const name = document.createElement("span");
+  name.className = "world-name";
+  name.textContent = party.name;
+  const meta = document.createElement("span");
+  meta.className = "world-meta party-meta";
+  meta.textContent = statusLine(party, status);
+  const sub = document.createElement("span");
+  sub.className = "world-meta party-sub";
+  sub.textContent = `${party.host}:${party.port} · ${lastJoined(party)}`;
+  text.append(name, meta, sub);
+
+  const actions = document.createElement("span");
+  actions.className = "world-actions";
+  if (party.connected) {
+    actions.append(
+      button("Leave", "world-btn world-btn-danger party-leave", (btn) =>
+        leaveSaved(party, btn),
+      ),
+    );
+  } else {
+    actions.append(
+      button("Join", "world-btn party-join", (btn) => joinSaved(party, btn)),
+      // Forgetting is offered only when nobody is in the world; the main
+      // process refuses it otherwise rather than yanking a player out.
+      button("Forget", "world-btn world-btn-danger", (btn) =>
+        forgetSaved(party, btn),
+      ),
+    );
+  }
+
+  head.append(dot, text, actions);
+  row.append(head);
+
+  // A connected party is one you can paste into Minecraft right now.
+  if (party.connected && party.localPort) {
+    const address = document.createElement("div");
+    address.className = "invite-row party-connect";
+    const input = document.createElement("input");
+    input.type = "text";
+    input.readOnly = true;
+    input.className = "party-address";
+    input.value = `localhost:${party.localPort}`;
+    const copy = document.createElement("button");
+    copy.className = "world-btn";
+    copy.type = "button";
+    copy.textContent = "Copy";
+    copy.addEventListener("click", async () => {
+      await craftparty.copy(input.value);
+      copy.textContent = "Copied!";
+      setTimeout(() => (copy.textContent = "Copy"), 1500);
+    });
+    address.append(input, copy);
+    row.append(address);
+  }
+
+  return row;
+}
+
+function button(label, className, onClick) {
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = className;
+  btn.textContent = label;
+  btn.addEventListener("click", () => onClick(btn));
+  return btn;
+}
+
+/**
+ * Repaint just the status of one row. Rebuilding the whole list on every
+ * probe would steal focus and reset a "Copied!" button mid-flash.
+ */
+function paintStatus(id) {
+  const party = parties.find((p) => p.id === id);
+  const row = partiesList.querySelector(`[data-party-id="${CSS.escape(id)}"]`);
+  if (!party || !row) return;
+  const status = statuses.get(id);
+  row.querySelector(".party-meta").textContent = statusLine(party, status);
+  row.querySelector(".party-dot").className = `party-dot ${statusClass(party, status)}`;
+  row.title = status?.detail ?? "";
+}
+
+function statusClass(party, status) {
+  if (!status || status.state === "checking") return "checking";
+  if (status.state !== "online") return "offline";
+  return party.connected ? "connected" : "online";
+}
+
+/**
+ * What a friend can actually rely on. Connected, the numbers come from a
+ * real ping to the host's Minecraft. Not connected, all Craftparty can
+ * reach is the host's control plane — which runs only while the party
+ * does — so it promises no more than "the host is up".
+ */
+function statusLine(party, status) {
+  if (!status || status.state === "checking") return "Checking…";
+  if (party.connected) {
+    if (status.state !== "online") {
+      return "Connected, but the world isn't answering";
+    }
+    const bits = ["In the world"];
+    if (status.players) {
+      bits.push(`${status.players.online}/${status.players.max} playing`);
+    }
+    if (status.version) bits.push(status.version);
+    if (status.pingMs !== null) bits.push(`${status.pingMs} ms`);
+    return bits.join(" · ");
+  }
+  if (status.state === "online") {
+    const ping = status.pingMs === null ? "" : ` · ${status.pingMs} ms`;
+    return `The host is up — ready to join${ping}`;
+  }
+  return "Offline — the host isn't running this world right now";
+}
+
+function lastJoined(party) {
+  if (!party.lastJoinedAt) return "Never joined";
+  const days = Math.floor(
+    (Date.now() - Date.parse(party.lastJoinedAt)) / 86_400_000,
+  );
+  if (days <= 0) return "Joined today";
+  if (days === 1) return "Joined yesterday";
+  if (days < 30) return `Joined ${days} days ago`;
+  return `Joined ${new Date(party.lastJoinedAt).toLocaleDateString()}`;
+}
+
+async function joinSaved(party, btn) {
+  btn.disabled = true;
+  await connect(() => craftparty.rejoinParty(party.id));
+  btn.disabled = false;
+}
+
+async function leaveSaved(party, btn) {
+  btn.disabled = true;
+  btn.textContent = "Leaving…";
+  await craftparty.leaveParty(party.id);
+  await refreshParties();
+}
+
+async function forgetSaved(party, btn) {
+  btn.disabled = true;
+  const result = await craftparty.forgetParty(party.id);
+  if (result.error) {
+    btn.disabled = false;
+    joinError.textContent = result.error;
+    joinError.hidden = false;
+    return;
+  }
+  await refreshParties({ probe: false });
+}
+
+/**
+ * One connection attempt, from either the paste box or a saved row. Both
+ * show the progress screen and end back at the list, which is where the
+ * result — connected, or a party that is saved but offline — shows up.
+ */
+async function connect(attempt) {
+  joinError.hidden = true;
+  $("join-report").hidden = true;
+  rememberSection(joinProgress);
+  const result = await attempt();
+  rememberSection(joinSetup);
+  if (result.error) {
+    joinError.textContent = result.error;
+    joinError.hidden = false;
+    showReport("join", result);
+  }
+  await refreshParties();
+  return result;
+}
 
 inviteInput.addEventListener("input", () => {
   joinBtn.disabled = !inviteInput.value.trim();
 });
 
 joinBtn.addEventListener("click", async () => {
-  joinError.hidden = true;
-  $("join-report").hidden = true;
-  rememberSection(joinProgress);
-  const result = await craftparty.joinParty(inviteInput.value.trim());
-  if (result.error) {
-    rememberSection(joinSetup);
-    joinError.textContent = result.error;
-    joinError.hidden = false;
-    showReport("join", result);
-    return;
+  const code = inviteInput.value.trim();
+  const result = await connect(() => craftparty.joinParty(code));
+  // Keep a code that didn't work, so it can be fixed rather than re-found.
+  if (!result.error) {
+    inviteInput.value = "";
+    joinBtn.disabled = true;
   }
-  $("join-address").value = `localhost:${result.localPort}`;
-  $("join-detail").textContent = `You're connected to "${result.partyName}".`;
-  rememberSection(joinRunning);
 });
 
-$("copy-address").addEventListener("click", async () => {
-  await craftparty.copy($("join-address").value);
-  $("copy-address").textContent = "Copied!";
-  setTimeout(() => ($("copy-address").textContent = "Copy"), 1500);
+$("parties-refresh").addEventListener("click", async (event) => {
+  event.target.disabled = true;
+  await refreshParties();
+  event.target.disabled = false;
 });
 
-$("leave").addEventListener("click", async () => {
-  $("leave").disabled = true;
-  await craftparty.leaveParty();
-  $("leave").disabled = false;
-  rememberSection(joinSetup);
-});
+// Opening the tab is a fresh question, and an open tab re-asks on its
+// own — a host stopping their world should show up without a click.
+$("tab-join").addEventListener("click", () => void checkAllParties());
+setInterval(() => {
+  if (!joinSetup.hidden) void checkAllParties();
+}, 20_000);
+
+refreshParties();
