@@ -118,9 +118,22 @@
       <p class="hint">Stopping saves your world — it stays on this computer and you can start it again any time.</p>
     </section>
 
-    <!-- join: setup -->
+    <!-- join: your parties + paste an invite -->
     <section id="join-setup" class="card" hidden>
       <h1>Join a party</h1>
+
+      <div id="parties-box" hidden>
+        <div class="parties-head">
+          <label for="parties-list">Your parties</label>
+          <button id="parties-refresh" class="world-btn" type="button">Refresh</button>
+        </div>
+        <div id="parties-list" class="worlds"></div>
+        <p class="hint">
+          Craftparty checks whether each host is running right now. Leave
+          or rejoin any of them whenever you like.
+        </p>
+      </div>
+
       <label for="invite-input">Paste the invite your friend sent you</label>
       <textarea id="invite-input" rows="4" spellcheck="false" placeholder="eyJ2IjoxLCJwYXJ0eSI6..."></textarea>
       <button id="join" class="btn btn-primary" disabled>Join the party</button>
@@ -136,19 +149,6 @@
       <h1 id="join-phase">Connecting…</h1>
       <div class="loader"><div class="loader-fill"></div></div>
       <p class="hint">Hang tight — connecting you to your friend's world.</p>
-    </section>
-
-    <!-- join: connected -->
-    <section id="join-running" class="card" hidden>
-      <h1><span class="dot"></span> You're in!</h1>
-      <p class="hint" id="join-detail"></p>
-      <label for="join-address">In Minecraft: Multiplayer → Direct Connection</label>
-      <div class="invite-row">
-        <input id="join-address" type="text" readonly />
-        <button id="copy-address" class="btn btn-secondary">Copy</button>
-      </div>
-      <p class="hint">Keep Craftparty open while you play.</p>
-      <button id="leave" class="btn btn-danger">Leave the party</button>
     </section>
   </main>
 

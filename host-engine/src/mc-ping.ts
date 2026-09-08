@@ -1,5 +1,13 @@
 import type net from "node:net";
 
+/** The slice of the server-list response Craftparty actually shows. */
+export interface McStatus {
+  version?: { name?: string; protocol?: number };
+  players?: { online?: number; max?: number };
+  /** MOTD: a plain string on old servers, a chat component on new ones. */
+  description?: unknown;
+}
+
 /**
  * Minecraft server-list ping over an already-connected socket.
  * Returns the parsed status JSON (version, players, motd).
@@ -9,7 +17,7 @@ export function minecraftStatus(
   host: string,
   port: number,
   timeoutMs = 10_000,
-): Promise<{ version?: { name?: string }; players?: { max?: number } }> {
+): Promise<McStatus> {
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => {
       socket.destroy();
@@ -87,4 +95,22 @@ function readVarint(buf: Buffer, offset: number): [value: number, bytes: number]
     if ((byte & 0x80) === 0) return [value, bytes];
     if (bytes > 5) throw new Error("varint too long");
   }
+}
+
+/**
+ * Flatten a MOTD into one line. Servers send either a plain string or a
+ * chat component tree, and only the text of it is worth showing.
+ */
+export function motdText(description: unknown): string {
+  const walk = (node: unknown): string => {
+    if (typeof node === "string") return node;
+    if (Array.isArray(node)) return node.map(walk).join("");
+    if (node && typeof node === "object") {
+      const n = node as { text?: unknown; extra?: unknown };
+      return `${typeof n.text === "string" ? n.text : ""}${walk(n.extra ?? "")}`;
+    }
+    return "";
+  };
+  // Servers colour the MOTD with § codes; they'd render as mojibake here.
+  return walk(description).replace(/\u00a7./g, "").replace(/\s+/g, " ").trim();
 }

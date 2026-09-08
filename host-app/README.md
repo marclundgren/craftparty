@@ -11,7 +11,33 @@ npm start          # build + run
 npm run dist       # build installers locally (no publishing)
 node --experimental-strip-types --test src/settings.test.ts
 node --experimental-strip-types --experimental-test-module-mocks --test src/updater.test.ts
+node --experimental-strip-types --test ../host-engine/src/parties.test.ts
 ```
+
+## Joining parties
+
+A friend can be in several parties at once. Each connection is its own
+userspace tailscaled plus its own loopback proxy, so the main process
+holds them in a map keyed by party id rather than a single slot, and
+`leave-party` takes the id of the one to drop.
+
+The parties themselves outlive the connections:
+`host-engine/src/parties.ts` keeps every invite that has been joined in
+`<dataDir>/parties.json`, which is what lets the Join tab list the ones
+nobody is connected to and offer to rejoin them. Rejoining replays the
+stored invite; a re-pasted invite for the same party replaces it, since
+a host who restarts mints a fresh auth key.
+
+Status comes from `host-engine/src/party-status.ts`, and how much it can
+promise depends on whether you are connected:
+
+- **Connected** — a real Minecraft server-list ping through the proxy,
+  so the version, the players online and the round-trip time are the
+  host's actual world.
+- **Not connected** — there is no route into the host's tailnet, so all
+  that can be asked is whether their control plane answers `/health`. It
+  runs only while the party runs, which makes it a fair stand-in for
+  "the host is up" and nothing more. The UI says exactly that.
 
 ## Icon
 

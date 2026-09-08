@@ -11,6 +11,19 @@ electron-builder posts that as the GitHub release body. See
 
 ## Unreleased
 
+- 🗂️ **Your parties, in one list.** The Join tab now remembers every party
+  you've joined. Be in several at once, see them all at a glance, and
+  leave or rejoin any of them whenever you like.
+- 🟢 **Know before you knock.** Each party says whether the host is
+  running it right now. Once you're in, it shows who's playing, the
+  Minecraft version and your ping — refreshed on its own while the tab is
+  open.
+- 🧹 **Forget the ones you're done with.** Old parties come off the list
+  with one click. Nothing on your computer or your friend's is touched.
+- 💬 **A bad invite says so.** Pasting half a code (or something that
+  isn't a code at all) now gets a plain answer instead of programmer
+  gibberish, and what you pasted stays put so you can fix it.
+
 ## 0.6.1 — hardcore's own line
 
 - 🎚️ **Hardcore is its own difficulty now.** Pick it straight from the
