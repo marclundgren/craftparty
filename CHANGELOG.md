@@ -11,6 +11,8 @@ electron-builder posts that as the GitHub release body. See
 
 ## Unreleased
 
+## 0.7.0 — see who's up
+
 - 🗂️ **Your parties, in one list.** The Join tab now remembers every party
   you've joined. Be in several at once, see them all at a glance, and
   leave or rejoin any of them whenever you like.
