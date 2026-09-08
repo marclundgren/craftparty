@@ -1,27 +1,29 @@
-- 🗂️ **Your parties, in one list.** The Join tab now remembers every party
-  you've joined. Be in several at once, see them all at a glance, and
-  leave or rejoin any of them whenever you like.
-- 🟢 **Know before you knock.** Each party says whether the host is
-  running it right now. Once you're in, it shows who's playing, the
-  Minecraft version and your ping — refreshed on its own while the tab is
-  open.
-- 🧹 **Forget the ones you're done with.** Old parties come off the list
-  with one click. Nothing on your computer or your friend's is touched.
-- 📐 **The button you need is always on screen.** Both tabs now keep their
-  heading and their main button in place while the middle scrolls, so
-  "Start my world" can't be pushed out of sight by a long list of worlds.
-  The window also opens a little taller.
-- 📄 **Long lists come in pages.** Once you have more than a handful of
-  worlds or parties, the list pages instead of growing forever, and a
-  search box appears to jump straight to the one you want.
-- 💬 **A bad invite says so.** Pasting half a code (or something that
-  isn't a code at all) now gets a plain answer instead of programmer
-  gibberish, and what you pasted stays put so you can fix it.
+- 🧱 **Everyone knows which Minecraft to launch.** The version is now on
+  screen wherever you're about to open the game: the new-world form says
+  which version your world will be made on, a running world shows it
+  right above the address you connect to, and every party in the Join tab
+  says which version its host runs — before you connect, so you can start
+  the right client the first time.
+- 🔎 **Your existing worlds already know.** Worlds you made before this
+  update have no version written down, so Craftparty reads it out of the
+  save itself — the same stamp Minecraft checks. They show their version
+  in the list straight away, and continuing one keeps it there.
+- 📌 **New worlds get the newest Minecraft, and keep it.** Craftparty asks
+  the Fabric server project which versions it can actually run, so a
+  world is never made on a version that won't start — in the few days
+  between a Minecraft release and Fabric catching up, you get the newest
+  one that's ready. And your world stays on the version it was made with:
+  opening a save in a newer Minecraft can't be undone, so it never
+  happens behind your back.
+- ❤️ **Sponsor Craftparty.** A quiet Sponsor button in the app's top bar
+  opens GitHub Sponsors in your browser, and the website has a page
+  section explaining what sponsoring pays for. Craftparty stays free, and
+  nothing about paying happens inside the app.
 
 ## Downloads
-- **Windows:** Craftparty-Setup-0.7.0.exe
-- **macOS:** Craftparty-0.7.0.dmg
-- **Linux:** Craftparty-0.7.0.AppImage
+- **Windows:** Craftparty-Setup-0.8.0.exe
+- **macOS:** Craftparty-0.8.0.dmg
+- **Linux:** Craftparty-0.8.0.AppImage
 
 ## Heads up: unsigned beta builds
 These builds are not code-signed yet, so your computer will warn you the first time:

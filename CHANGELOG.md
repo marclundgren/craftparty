@@ -11,6 +11,8 @@ electron-builder posts that as the GitHub release body. See
 
 ## Unreleased
 
+## 0.8.0 — which Minecraft you're on
+
 - 🧱 **Everyone knows which Minecraft to launch.** The version is now on
   screen wherever you're about to open the game: the new-world form says
   which version your world will be made on, a running world shows it
