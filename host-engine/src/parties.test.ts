@@ -16,6 +16,10 @@ const invite = (
   party: string,
   controlPlaneUrl = "https://1-2-3-4.sslip.io",
   host = "100.64.0.1",
+  // null means an invite that carries no version at all — what a
+  // Craftparty from before they travelled would have minted. An explicit
+  // undefined can't say that: it would take the default instead.
+  minecraft: string | null = "26.2",
 ) =>
   encodeInvite({
     v: 1,
@@ -23,6 +27,7 @@ const invite = (
     controlPlaneUrl,
     authKey: "key-abc",
     server: { host, port: 25565 },
+    minecraft: minecraft ?? undefined,
   });
 
 test("there are no parties before one is joined", async () => {
@@ -36,6 +41,32 @@ test("an invite is remembered and comes back whole", async () => {
   assert.equal(saved.port, 25565);
   assert.equal(saved.lastJoinedAt, null);
   assert.deepEqual(await getParty(saved.id), saved);
+});
+
+test("an invite says which Minecraft the host is running", async () => {
+  const saved = await rememberParty(
+    invite("Version Cave", "https://5-5-5-5.sslip.io"),
+  );
+  assert.equal(saved.minecraftVersion, "26.2");
+  assert.equal((await getParty(saved.id)).minecraftVersion, "26.2");
+});
+
+test("an invite from before versions travelled keeps what we already knew", async () => {
+  const url = "https://4-4-4-4.sslip.io";
+  const known = await rememberParty(invite("Old Invite", url));
+  assert.equal(known.minecraftVersion, "26.2");
+  // Same party, re-pasted from an older Craftparty's code: nothing to say
+  // about the version is not the same as saying there isn't one.
+  const again = await rememberParty(invite("Old Invite", url, "100.64.0.1", null));
+  assert.equal(again.id, known.id);
+  assert.equal(again.minecraftVersion, "26.2");
+});
+
+test("a party first seen without a version simply has none", async () => {
+  const saved = await rememberParty(
+    invite("No Version", "https://3-3-3-3.sslip.io", "100.64.0.1", null),
+  );
+  assert.equal(saved.minecraftVersion, null);
 });
 
 test("rejoining the same party refreshes its invite instead of duplicating it", async () => {

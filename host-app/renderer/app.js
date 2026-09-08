@@ -24,6 +24,7 @@ const setupError = $("setup-error");
 const worldSearch = $("world-search");
 const worldsCount = $("worlds-count");
 const worldsEmpty = $("worlds-empty");
+const newWorldVersion = $("new-world-version");
 
 /**
  * Rows per page. A card has exactly one scrolling region — its body — so
@@ -67,6 +68,79 @@ const rememberSection = (section) => {
   else joinSection = section;
   show(section);
 };
+
+// ---- Minecraft version ----
+/*
+ * Which Minecraft a world speaks, said everywhere someone is about to
+ * launch a client: making a world, running one, looking at a friend's.
+ *
+ * A new world is made on the newest version Craftparty can actually host
+ * — the newest Fabric has published a server for, which trails a
+ * Minecraft release by a few days — and keeps it for good. So a saved
+ * world shows its own version, never today's.
+ */
+
+/** The newest hostable version, once the main process has looked it up. */
+let latestVersion = null;
+
+/** What to say when there is no number to show — before, and if the check fails. */
+let versionUnknownNote = "Checking which version your world can run…";
+
+/**
+ * How a version reads inside a list row. The space is non-breaking on
+ * purpose: those lines wrap, and "Minecraft" left on one line with its
+ * number orphaned onto the next is unreadable at a glance.
+ */
+function versionLabel(version) {
+  return `Minecraft\u00A0${version}`;
+}
+
+/** Fill one .version-line: the tag holds the number, the note its meaning. */
+function paintVersion(line, version, note) {
+  const tag = line.querySelector(".version-tag");
+  tag.hidden = !version;
+  tag.textContent = version ?? "";
+  line.querySelector(".version-note").textContent = note;
+}
+
+/**
+ * The version the start button would really run. Typing the name of a
+ * world that already exists continues that world — on the version it was
+ * made with, not on the newest one — and the line has to say so rather
+ * than promising a number the start won't use.
+ */
+function renderNewWorldVersion(existing) {
+  if (existing) {
+    paintVersion(
+      newWorldVersion,
+      existing.minecraftVersion,
+      existing.minecraftVersion
+        ? `“${existing.name}” runs this version — continuing it keeps it there.`
+        : `“${existing.name}” hasn't run yet; its version is settled the first time it does.`,
+    );
+  } else if (latestVersion) {
+    paintVersion(
+      newWorldVersion,
+      latestVersion,
+      "The newest Minecraft Craftparty can host. Your world stays on it for good, and everyone needs this version to join.",
+    );
+  } else {
+    paintVersion(newWorldVersion, null, versionUnknownNote);
+  }
+}
+
+(async () => {
+  const result = await craftparty.minecraftVersion();
+  if (result.version) {
+    latestVersion = result.version;
+  } else {
+    // Not fatal — starting resolves the version for real. Say what's
+    // true instead of showing a number nobody checked.
+    versionUnknownNote =
+      "Couldn't check the latest Minecraft version. Starting a world uses the newest one available.";
+  }
+  renderNewWorldVersion(worldWithName(worldName.value));
+})();
 
 // ---- worlds ----
 // Worlds outlive parties: stopping a party (or quitting) leaves the world
@@ -174,7 +248,14 @@ function worldRow(world) {
   name.textContent = world.name;
   const meta = document.createElement("span");
   meta.className = "world-meta";
-  meta.textContent = `${lastPlayed(world)} · ${formatSize(world.sizeBytes)}`;
+  meta.textContent = [
+    lastPlayed(world),
+    formatSize(world.sizeBytes),
+    // Missing only until this world has run once; see worlds.ts.
+    world.minecraftVersion && versionLabel(world.minecraftVersion),
+  ]
+    .filter(Boolean)
+    .join(" · ");
   text.append(name, meta);
   pick.append(radio, text);
 
@@ -264,6 +345,7 @@ function refreshChoice() {
 
   startBtn.textContent = target ? `Continue "${target.name}"` : "Start my world";
   startBtn.disabled = !(eula.checked && (target || worldName.value.trim()));
+  renderNewWorldVersion(target);
 }
 
 function worldWithName(name) {
@@ -584,6 +666,15 @@ startBtn.addEventListener("click", async () => {
   $("running-detail").textContent = result.remote
     ? "Friends anywhere on the internet can join with your invite."
     : "Friends on your home network can join with your invite.";
+  // The one thing everyone has to match before any of the rest works.
+  $("running-version").hidden = !result.minecraftVersion;
+  if (result.minecraftVersion) {
+    paintVersion(
+      $("running-version"),
+      result.minecraftVersion,
+      "Launch this Minecraft version to play — you and your friends both.",
+    );
+  }
   rememberSection(running);
 });
 
@@ -708,7 +799,7 @@ function partyRow(party) {
   meta.textContent = statusLine(party, status);
   const sub = document.createElement("span");
   sub.className = "world-meta party-sub";
-  sub.textContent = `${party.host}:${party.port} · ${lastJoined(party)}`;
+  sub.textContent = partySub(party, status);
   text.append(name, meta, sub);
 
   const actions = document.createElement("span");
@@ -758,6 +849,26 @@ function partyRow(party) {
   return row;
 }
 
+/**
+ * The line under the name: which Minecraft to launch, where the world
+ * lives, when you were last in it.
+ *
+ * The version comes from the invite, so it is there whether or not the
+ * host is up — a friend can see what client they'll need before anyone
+ * starts anything. A live ping overrides it: that is the version the
+ * server is really speaking right now.
+ */
+function partySub(party, status) {
+  const version = status?.version ?? party.minecraftVersion;
+  return [
+    version && versionLabel(version),
+    `${party.host}:${party.port}`,
+    lastJoined(party),
+  ]
+    .filter(Boolean)
+    .join(" · ");
+}
+
 function button(label, className, onClick) {
   const btn = document.createElement("button");
   btn.type = "button";
@@ -777,6 +888,7 @@ function paintStatus(id) {
   if (!party || !row) return;
   const status = statuses.get(id);
   row.querySelector(".party-meta").textContent = statusLine(party, status);
+  row.querySelector(".party-sub").textContent = partySub(party, status);
   row.querySelector(".party-dot").className = `party-dot ${statusClass(party, status)}`;
   row.title = status?.detail ?? "";
 }
@@ -792,6 +904,10 @@ function statusClass(party, status) {
  * real ping to the host's Minecraft. Not connected, all Craftparty can
  * reach is the host's control plane — which runs only while the party
  * does — so it promises no more than "the host is up".
+ *
+ * The Minecraft version is deliberately not here: it is known from the
+ * invite either way, and belongs on the line that stays put (partySub)
+ * rather than appearing and vanishing with each probe.
  */
 function statusLine(party, status) {
   if (!status || status.state === "checking") return "Checking…";
@@ -803,7 +919,6 @@ function statusLine(party, status) {
     if (status.players) {
       bits.push(`${status.players.online}/${status.players.max} playing`);
     }
-    if (status.version) bits.push(status.version);
     if (status.pingMs !== null) bits.push(`${status.pingMs} ms`);
     return bits.join(" · ");
   }

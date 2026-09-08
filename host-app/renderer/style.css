@@ -431,6 +431,38 @@ select:focus {
   font-size: 0.85rem;
 }
 
+/* ---- Minecraft version ---- */
+/*
+ * Which Minecraft this world speaks. It appears wherever someone is about
+ * to launch a client — making a world, running one, looking at a friend's
+ * — and reads the same in all three places, so the number is recognised
+ * rather than re-read. The tag carries the version alone; the note beside
+ * it says what that means here.
+ */
+.version-line {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0.35rem 0 0;
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+}
+
+.version-tag {
+  font-family: ui-monospace, monospace;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--grass-deep);
+  background: #eef7e6;
+  border: 2px solid #cfe6bd;
+  border-radius: 4px;
+  padding: 0.1rem 0.4rem;
+}
+
+/* Nothing to show yet, or nothing we could check — the note stands alone. */
+.version-note { flex: 1; min-width: 12rem; }
+
 /* ---- saved worlds picker ---- */
 /*
  * Deliberately not scrollable. A card already has exactly one scrolling

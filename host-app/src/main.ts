@@ -34,6 +34,7 @@ import {
   listWorlds,
   recordPlayed,
 } from "../../host-engine/src/worlds.ts";
+import { latestSupportedMinecraft } from "../../host-engine/src/versions.ts";
 import { reapStaleChildren } from "../../host-engine/src/pids.ts";
 import {
   check as checkForUpdates,
@@ -225,6 +226,23 @@ ipcMain.handle("get-addons", async () => {
   }
 });
 
+/**
+ * Which Minecraft a new world would be created on: the newest release
+ * Fabric can serve today (see host-engine/src/versions.ts), not the
+ * newest Mojang has shipped — those differ for a few days after every
+ * Minecraft release, and only the first can actually be started.
+ *
+ * An error here is not a failure worth blocking on: the form says it
+ * couldn't check and the start goes on to resolve it for real.
+ */
+ipcMain.handle("minecraft-version", async () => {
+  try {
+    return { version: await latestSupportedMinecraft() };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : String(err) };
+  }
+});
+
 // ---- updates ----
 // The renderer only ever reflects this state; every transition is driven
 // by the main process and pushed down through the "update-state" channel.
@@ -281,6 +299,7 @@ ipcMain.handle("list-worlds", async () => {
         lastPlayedAt: w.lastPlayedAt,
         sizeBytes: w.sizeBytes,
         addonIds: w.addonIds,
+        minecraftVersion: w.minecraftVersion,
       })),
     };
   } catch (err) {
@@ -355,9 +374,16 @@ ipcMain.handle(
       // the disk, so a value the engine doesn't recognise can't leave an
       // empty world directory behind.
       worldConfig = parseWorldConfig(opts.worldConfig);
-      world = opts.worldId
-        ? await getWorld(opts.worldId)
-        : await createWorld(opts.worldName ?? "");
+      if (opts.worldId) {
+        world = await getWorld(opts.worldId);
+      } else {
+        // A new world is pinned to today's newest hostable Minecraft and
+        // keeps it for good; a saved one already has its own. Fabric
+        // being unreachable isn't fatal — the world is created unpinned
+        // and stamped with whatever the start actually runs.
+        const version = await latestSupportedMinecraft().catch(() => null);
+        world = await createWorld(opts.worldName ?? "", version);
+      }
     } catch (err) {
       return { error: err instanceof Error ? err.message : String(err) };
     }
@@ -394,13 +420,17 @@ ipcMain.handle(
         },
       };
       party = await startParty(partyOpts);
-      await recordPlayed(world.id, opts.addonIds ?? []).catch(() => {});
+      const minecraftVersion = party.server.versions.minecraft;
+      await recordPlayed(world.id, opts.addonIds ?? [], minecraftVersion).catch(
+        () => {},
+      );
       return {
         worldId: world.id,
         worldName: world.name,
         inviteCode: party.inviteCode,
         tailnetIp: party.tailnetIp,
         port: party.server.port,
+        minecraftVersion,
         mode: party.mode,
         remote: opts.remote,
       };
@@ -506,6 +536,7 @@ ipcMain.handle("list-parties", async () => {
         name: p.name,
         host: p.host,
         port: p.port,
+        minecraftVersion: p.minecraftVersion,
         addedAt: p.addedAt,
         lastJoinedAt: p.lastJoinedAt,
         connected: joins.has(p.id),

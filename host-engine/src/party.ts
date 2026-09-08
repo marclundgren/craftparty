@@ -19,6 +19,14 @@ export interface Invite {
   /** Reusable preauth key friends' tailscale clients log in with. */
   authKey: string;
   server: { host: string; port: number };
+  /**
+   * The Minecraft version the host is running, so a friend knows which
+   * client to launch before they connect — and still knows it while the
+   * host is offline, when nothing can be pinged for it.
+   *
+   * Optional: invites minted before this existed decode without it.
+   */
+  minecraft?: string;
 }
 
 export function encodeInvite(invite: Invite): string {
@@ -184,6 +192,10 @@ export async function startParty(opts: PartyOptions): Promise<PartyHandle> {
       worldDir: opts.world.dir,
       worldName: opts.world.name,
       acceptEula: opts.acceptEula,
+      // The world's own version, so resuming a saved world never moves it
+      // to a newer Minecraft. A world with no pin yet gets today's newest
+      // and reports it back in server.versions for the caller to save.
+      minecraftVersion: opts.world.minecraftVersion,
       addons: opts.addons,
       memoryMb: opts.memoryMb,
       motd: opts.motd,
@@ -199,6 +211,7 @@ export async function startParty(opts: PartyOptions): Promise<PartyHandle> {
       controlPlaneUrl,
       authKey: friendAuthKey,
       server: { host: tailnetIp, port: server.port },
+      minecraft: server.versions.minecraft,
     };
 
     phase("ready");

@@ -28,6 +28,12 @@ export interface JoinedParty {
   /** The host's Minecraft server inside the tailnet. */
   host: string;
   port: number;
+  /**
+   * The Minecraft version the host runs, from the invite — which client
+   * to launch. null for an invite from before hosts sent it; a live ping
+   * fills that gap once connected (see party-status.ts).
+   */
+  minecraftVersion: string | null;
   addedAt: string;
   lastJoinedAt: string | null;
 }
@@ -80,6 +86,8 @@ function sanitize(raw: unknown): JoinedParty | null {
     controlPlaneUrl: p.controlPlaneUrl,
     host: p.host,
     port: p.port,
+    minecraftVersion:
+      typeof p.minecraftVersion === "string" ? p.minecraftVersion : null,
     addedAt: typeof p.addedAt === "string" ? p.addedAt : new Date(0).toISOString(),
     lastJoinedAt: typeof p.lastJoinedAt === "string" ? p.lastJoinedAt : null,
   };
@@ -156,6 +164,9 @@ export async function rememberParty(
       controlPlaneUrl: invite.controlPlaneUrl,
       host: invite.server.host,
       port: invite.server.port,
+      // A host who upgrades their world sends a new invite saying so;
+      // an older invite without the field leaves what we already knew.
+      minecraftVersion: invite.minecraft ?? existing?.minecraftVersion ?? null,
       addedAt: existing?.addedAt ?? new Date().toISOString(),
       lastJoinedAt: existing?.lastJoinedAt ?? null,
     };
