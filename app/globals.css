@@ -197,6 +197,24 @@ a {
   box-shadow: 0 2px 0 #b3a68e;
 }
 
+/* Sponsoring gets the heart colour rather than the grass of "Download" —
+   it is a different kind of action and shouldn't compete with the one
+   the page is really for. */
+.btn-sponsor {
+  background: var(--heart);
+  color: #fff;
+  box-shadow: 0 5px 0 #a5322f;
+}
+
+.btn-sponsor:hover {
+  transform: translateY(-2px);
+}
+
+.btn-sponsor:active {
+  transform: translateY(3px);
+  box-shadow: 0 2px 0 #a5322f;
+}
+
 /* drifting pixel clouds */
 .cloud {
   position: absolute;

@@ -1,0 +1,4 @@
+# Puts a "Sponsor" button on the repository page and on every release.
+# GitHub only renders it once Sponsors is enabled for the account:
+# https://github.com/sponsors/dashboard
+github: marclundgren

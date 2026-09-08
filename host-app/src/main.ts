@@ -122,6 +122,7 @@ const send = (channel: string, ...args: unknown[]) => {
 
 const REPORT_URL = "https://craftparty-ten.vercel.app/api/report";
 const MARKETPLACE_URL = "https://craftparty-ten.vercel.app/marketplace";
+const SPONSORS_URL = "https://github.com/sponsors/marclundgren";
 const ADDONS_URL = "https://craftparty-ten.vercel.app/addons.json";
 
 interface RegistryAddon {
@@ -257,6 +258,13 @@ ipcMain.handle("install-update", () => {
 
 ipcMain.handle("open-marketplace", () => {
   shell.openExternal(MARKETPLACE_URL);
+  return { ok: true };
+});
+
+// Sponsoring happens on github.com, in the browser — Craftparty never
+// sees a payment, and deliberately has no account of its own to ask for.
+ipcMain.handle("open-sponsors", () => {
+  shell.openExternal(SPONSORS_URL);
   return { ok: true };
 });
 

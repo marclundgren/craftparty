@@ -52,6 +52,44 @@ body {
   letter-spacing: 0.03em;
 }
 
+.topbar-end {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+/* Quiet by default — this should read as available, not as an ask. */
+.sponsor-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #2d4250;
+  background: rgba(255, 255, 255, 0.55);
+  border: 2px solid transparent;
+  border-radius: 999px;
+  padding: 0.2rem 0.7rem;
+  cursor: pointer;
+}
+
+.sponsor-btn:hover {
+  background: var(--paper);
+  border-color: #eccdc8;
+  color: var(--danger);
+}
+
+/* A glyph, not the website's pixel heart: at button size the CSS-block
+   version collapses into an unreadable blob. */
+.sponsor-heart {
+  color: #c96f6a;
+  font-size: 0.9rem;
+  line-height: 1;
+}
+
+.sponsor-btn:hover .sponsor-heart { color: var(--danger); }
+
 .net-status {
   font-size: 0.8rem;
   font-weight: 600;

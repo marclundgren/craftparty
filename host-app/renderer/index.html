@@ -9,7 +9,16 @@
 <body>
   <header class="topbar">
     <span class="logo">Craftparty</span>
-    <span id="net-status" class="net-status">checking your network…</span>
+    <span class="topbar-end">
+      <!-- Deliberately small and always in the same place: available from
+           anywhere in the app, never in the way of hosting or joining, and
+           never shown at a moment the app has just made someone happy. -->
+      <button id="sponsor" class="sponsor-btn" type="button"
+              title="Support Craftparty on GitHub Sponsors">
+        <span class="sponsor-heart" aria-hidden="true">&#9829;</span> Sponsor
+      </button>
+      <span id="net-status" class="net-status">checking your network…</span>
+    </span>
   </header>
 
   <nav class="tabs">

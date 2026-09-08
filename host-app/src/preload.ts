@@ -23,6 +23,7 @@ contextBridge.exposeInMainWorld("craftparty", {
   copy: (text: string) => ipcRenderer.invoke("copy", text),
   getAddons: () => ipcRenderer.invoke("get-addons"),
   openMarketplace: () => ipcRenderer.invoke("open-marketplace"),
+  openSponsors: () => ipcRenderer.invoke("open-sponsors"),
   updateState: () => ipcRenderer.invoke("update-state"),
   checkForUpdates: () => ipcRenderer.invoke("check-for-updates"),
   downloadUpdate: () => ipcRenderer.invoke("download-update"),

@@ -18,6 +18,7 @@ export default function Marketplace() {
             </a>
             <div className="nav-links">
               <a href="/">Home</a>
+              <a href="https://github.com/sponsors/marclundgren">Sponsor</a>
               <a href="https://github.com/marclundgren/craftparty">GitHub</a>
             </div>
           </nav>
@@ -85,6 +86,7 @@ export default function Marketplace() {
         <div className="wrap">
           <div className="links">
             <a href="/">Home</a>
+            <a href="https://github.com/sponsors/marclundgren">Sponsor</a>
             <a href="https://github.com/marclundgren/craftparty">GitHub</a>
           </div>
           <p className="disclaimer">

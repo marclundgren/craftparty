@@ -540,6 +540,10 @@ $("marketplace-link").addEventListener("click", (e) => {
   craftparty.openMarketplace();
 });
 
+// Opens github.com in the real browser; nothing about paying happens in
+// the app itself.
+$("sponsor").addEventListener("click", () => craftparty.openSponsors());
+
 // ---- start ----
 startBtn.addEventListener("click", async () => {
   setupError.hidden = true;
