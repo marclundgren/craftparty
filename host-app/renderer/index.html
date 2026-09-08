@@ -29,12 +29,30 @@
 
   <main>
     <!-- setup -->
-    <section id="setup" class="card">
+    <section id="setup" class="card card-split">
       <h1>Host a party</h1>
+      <div class="card-body">
 
       <div id="worlds-box" hidden>
-        <label>Your worlds</label>
+        <div class="list-head">
+          <label>Your worlds</label>
+          <span id="worlds-count" class="hint-inline"></span>
+        </div>
+        <!-- Shown only once the list is long enough to be worth searching;
+             app.js owns the threshold. -->
+        <input id="world-search" type="text" class="list-search" hidden
+               placeholder="Search your worlds" aria-label="Search your worlds"
+               autocomplete="off" />
         <div id="worlds-list" class="worlds"></div>
+        <p id="worlds-empty" class="hint" hidden></p>
+        <div id="worlds-pager" class="pager" hidden>
+          <button id="worlds-prev" class="world-btn" type="button">‹ Back</button>
+          <span id="worlds-page" class="hint-inline"></span>
+          <button id="worlds-next" class="world-btn" type="button">Next ›</button>
+        </div>
+        <!-- Outside the paged list on purpose: starting fresh is an action,
+             not one of the saved worlds, and it must never be a page away. -->
+        <div id="new-world-row" class="worlds"></div>
       </div>
 
       <div id="new-world-box">
@@ -80,11 +98,17 @@
         </p>
       </details>
 
-      <button id="start" class="btn btn-primary" disabled>Start my world</button>
-      <p id="setup-error" class="error" hidden></p>
-      <div id="setup-report" class="report-row" hidden>
-        <p id="setup-report-note" class="hint"></p>
-        <button id="setup-copy-report" class="btn">Copy error details</button>
+      </div><!-- /card-body -->
+
+      <!-- Pinned: the one button that matters never scrolls out of reach,
+           however many worlds are in the list above. -->
+      <div class="card-actions">
+        <button id="start" class="btn btn-primary" disabled>Start my world</button>
+        <p id="setup-error" class="error" hidden></p>
+        <div id="setup-report" class="report-row" hidden>
+          <p id="setup-report-note" class="hint"></p>
+          <button id="setup-copy-report" class="btn">Copy error details</button>
+        </div>
       </div>
     </section>
 
@@ -119,15 +143,28 @@
     </section>
 
     <!-- join: your parties + paste an invite -->
-    <section id="join-setup" class="card" hidden>
+    <section id="join-setup" class="card card-split" hidden>
       <h1>Join a party</h1>
+      <div class="card-body">
 
       <div id="parties-box" hidden>
-        <div class="parties-head">
-          <label for="parties-list">Your parties</label>
-          <button id="parties-refresh" class="world-btn" type="button">Refresh</button>
+        <div class="list-head">
+          <label>Your parties</label>
+          <span class="list-head-end">
+            <span id="parties-count" class="hint-inline"></span>
+            <button id="parties-refresh" class="world-btn" type="button">Refresh</button>
+          </span>
         </div>
+        <input id="party-search" type="text" class="list-search" hidden
+               placeholder="Search your parties" aria-label="Search your parties"
+               autocomplete="off" />
         <div id="parties-list" class="worlds"></div>
+        <p id="parties-empty" class="hint" hidden></p>
+        <div id="parties-pager" class="pager" hidden>
+          <button id="parties-prev" class="world-btn" type="button">‹ Back</button>
+          <span id="parties-page" class="hint-inline"></span>
+          <button id="parties-next" class="world-btn" type="button">Next ›</button>
+        </div>
         <p class="hint">
           Craftparty checks whether each host is running right now. Leave
           or rejoin any of them whenever you like.
@@ -136,11 +173,16 @@
 
       <label for="invite-input">Paste the invite your friend sent you</label>
       <textarea id="invite-input" rows="4" spellcheck="false" placeholder="eyJ2IjoxLCJwYXJ0eSI6..."></textarea>
-      <button id="join" class="btn btn-primary" disabled>Join the party</button>
-      <p id="join-error" class="error" hidden></p>
-      <div id="join-report" class="report-row" hidden>
-        <p id="join-report-note" class="hint"></p>
-        <button id="join-copy-report" class="btn">Copy error details</button>
+
+      </div><!-- /card-body -->
+
+      <div class="card-actions">
+        <button id="join" class="btn btn-primary" disabled>Join the party</button>
+        <p id="join-error" class="error" hidden></p>
+        <div id="join-report" class="report-row" hidden>
+          <p id="join-report-note" class="hint"></p>
+          <button id="join-copy-report" class="btn">Copy error details</button>
+        </div>
       </div>
     </section>
 

@@ -21,6 +21,30 @@ const remoteHint = $("remote-hint");
 const eula = $("eula");
 const startBtn = $("start");
 const setupError = $("setup-error");
+const worldSearch = $("world-search");
+const worldsCount = $("worlds-count");
+const worldsEmpty = $("worlds-empty");
+
+/**
+ * Rows per page. A card has exactly one scrolling region — its body — so
+ * the lists inside it must stay short enough not to bury what follows
+ * them; paging is how that happens without nesting a second scrollbar.
+ * Party rows carry a status line and an address, so fewer of them fit.
+ *
+ * Search and paging arrive together, at the first list that needs a
+ * second page: below that everything is already on screen, and both
+ * controls would be clutter asking to be understood.
+ */
+const PAGE_SIZE = { worlds: 5, parties: 4 };
+
+/** Which page each list is showing, zero-based. */
+const page = { worlds: 0, parties: 0 };
+
+/** Case-insensitive name match; blank query means everything. */
+function matching(items, query) {
+  const q = query.trim().toLowerCase();
+  return q ? items.filter((i) => i.name.toLowerCase().includes(q)) : items;
+}
 
 let netVerdict = null;
 
@@ -64,13 +88,73 @@ async function refreshWorlds(preferId) {
 
 function renderWorlds() {
   worldsBox.hidden = worlds.length === 0;
-  worldsList.replaceChildren();
-  for (const world of worlds) {
-    worldsList.append(worldRow(world));
-  }
-  if (worlds.length > 0) worldsList.append(newWorldRow());
+  worldSearch.hidden = worlds.length <= PAGE_SIZE.worlds;
+  // A box nobody can see must not go on filtering the list.
+  if (worldSearch.hidden) worldSearch.value = "";
+
+  const query = worldSearch.value;
+  const shown = matching(worlds, query);
+  worldsList.replaceChildren(...pageOf("worlds", shown).map(worldRow));
+  // Always there, never paged away: starting fresh is an action, not one
+  // of the saved worlds.
+  $("new-world-row").replaceChildren(newWorldRow());
+
+  worldsCount.textContent = countLabel(shown.length, worlds.length, query, "worlds");
+  showEmpty(worldsEmpty, shown.length, query, "worlds");
   refreshChoice();
 }
+
+/**
+ * The slice of `items` to draw, and the pager to go with it. Clamps the
+ * page first: a search that narrows the list can leave us past the end.
+ */
+function pageOf(list, items) {
+  const size = PAGE_SIZE[list];
+  const pages = Math.max(1, Math.ceil(items.length / size));
+  page[list] = Math.min(Math.max(page[list], 0), pages - 1);
+
+  const pager = $(`${list}-pager`);
+  pager.hidden = pages <= 1;
+  if (!pager.hidden) {
+    $(`${list}-page`).textContent = `Page ${page[list] + 1} of ${pages}`;
+    $(`${list}-prev`).disabled = page[list] === 0;
+    $(`${list}-next`).disabled = page[list] >= pages - 1;
+  }
+  return items.slice(page[list] * size, page[list] * size + size);
+}
+
+/** Wire a list's search box and pager to its renderer. */
+function wireList(list, render) {
+  $(`${list === "worlds" ? "world" : "party"}-search`).addEventListener(
+    "input",
+    () => {
+      page[list] = 0; // a new query always starts at the first result
+      render();
+    },
+  );
+  $(`${list}-prev`).addEventListener("click", () => {
+    page[list]--;
+    render();
+  });
+  $(`${list}-next`).addEventListener("click", () => {
+    page[list]++;
+    render();
+  });
+}
+
+/** "3 of 12" while searching, a plain total once the list needs paging. */
+function countLabel(shown, total, query, noun) {
+  if (query.trim()) return `${shown} of ${total}`;
+  return total > PAGE_SIZE[noun] ? `${total} ${noun}` : "";
+}
+
+function showEmpty(el, shown, query, noun) {
+  const empty = shown === 0 && query.trim();
+  el.hidden = !empty;
+  if (empty) el.textContent = `No ${noun} match “${query.trim()}”.`;
+}
+
+wireList("worlds", renderWorlds);
 
 function worldRow(world) {
   const row = document.createElement("div");
@@ -170,7 +254,9 @@ function refreshChoice() {
   // Highlight whatever the start button is actually about to do, so a
   // typed-in collision points at the world it will continue.
   const target = chosen ?? collision;
-  for (const row of worldsList.children) {
+  // Both the paged rows and the "Start a new world" row that sits outside
+  // the pager.
+  for (const row of worldsBox.querySelectorAll(".world-row")) {
     const selected = row.dataset.worldId === (target?.id ?? "");
     row.classList.toggle("selected", selected);
     row.querySelector("input[type=radio]").checked = selected;
@@ -529,6 +615,9 @@ $("stop").addEventListener("click", async () => {
 // and asks for a fresh status when it wants one.
 const partiesBox = $("parties-box");
 const partiesList = $("parties-list");
+const partySearch = $("party-search");
+const partiesCount = $("parties-count");
+const partiesEmpty = $("parties-empty");
 const inviteInput = $("invite-input");
 const joinBtn = $("join");
 const joinError = $("join-error");
@@ -576,8 +665,22 @@ async function checkParty(id) {
 
 function renderParties() {
   partiesBox.hidden = parties.length === 0;
-  partiesList.replaceChildren(...parties.map(partyRow));
+  partySearch.hidden = parties.length <= PAGE_SIZE.parties;
+  if (partySearch.hidden) partySearch.value = "";
+
+  const query = partySearch.value;
+  const shown = matching(parties, query);
+  partiesList.replaceChildren(...pageOf("parties", shown).map(partyRow));
+  partiesCount.textContent = countLabel(
+    shown.length,
+    parties.length,
+    query,
+    "parties",
+  );
+  showEmpty(partiesEmpty, shown.length, query, "parties");
 }
+
+wireList("parties", renderParties);
 
 function partyRow(party) {
   const status = statuses.get(party.id);

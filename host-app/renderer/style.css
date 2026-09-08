@@ -29,6 +29,11 @@ html, body {
 body {
   display: flex;
   flex-direction: column;
+  /* The page itself never scrolls — every card is capped to the window and
+     scrolls inside itself instead, which is what keeps each card's action
+     button on screen. Without this a sub-pixel rounding difference is
+     enough to put a scrollbar back on the whole window. */
+  overflow: hidden;
   font-family: system-ui, "Segoe UI", sans-serif;
   color: var(--ink);
   background: linear-gradient(to bottom, var(--sky-hi), var(--sky) 60%, #c9e8ee);
@@ -82,6 +87,10 @@ body {
 
 main {
   flex: 1;
+  /* min-height:0 lets the card shrink to the window instead of pushing the
+     page taller — without it a tall card scrolls the whole window and takes
+     the primary button with it. */
+  min-height: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -106,6 +115,11 @@ textarea:focus {
   border-color: var(--torch);
 }
 
+/*
+ * A card never outgrows the window. Its heading and its action button are
+ * pinned; only the middle scrolls. That is what keeps "Start my world"
+ * reachable no matter how many saved worlds are listed above it.
+ */
 .card {
   background: var(--paper);
   border: 2px solid #e4dcc8;
@@ -113,7 +127,54 @@ textarea:focus {
   box-shadow: 6px 6px 0 rgba(34, 50, 60, 0.12);
   padding: 1.8rem 2rem 2rem;
   width: min(30rem, 92vw);
+  /* No card ever outgrows the window: it scrolls inside itself rather than
+     making the whole page scroll. */
+  max-height: 100%;
+  overflow-y: auto;
 }
+
+/*
+ * The two long cards go further and split: heading and action button
+ * pinned, only the middle scrolls. That is what keeps "Start my world"
+ * reachable however many saved worlds are listed above it. The short
+ * cards stay plain blocks — flex would stretch their buttons full-width.
+ */
+.card-split {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.card-split > h1 { flex: 0 0 auto; }
+
+.card-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  /* Bleed to the card's padding edge so the scrollbar hugs the border and
+     focus outlines inside aren't clipped. */
+  margin: 0 -0.6rem;
+  padding: 0 0.6rem;
+  /*
+   * Scroll shadows: the two `local` gradients paint the paper colour over
+   * the cover at each end, so the `scroll` shadows behind them only show
+   * when there is actually more content that way. Pure CSS — it needs no
+   * scroll listener and can never disagree with the real scroll position.
+   */
+  background:
+    linear-gradient(var(--paper) 30%, rgba(255, 253, 245, 0)) top / 100% 1.4rem no-repeat,
+    linear-gradient(rgba(255, 253, 245, 0), var(--paper) 70%) bottom / 100% 1.4rem no-repeat,
+    radial-gradient(farthest-side at 50% 0, rgba(34, 50, 60, 0.16), rgba(34, 50, 60, 0)) top / 100% 0.5rem no-repeat,
+    radial-gradient(farthest-side at 50% 100%, rgba(34, 50, 60, 0.16), rgba(34, 50, 60, 0)) bottom / 100% 0.5rem no-repeat;
+  background-attachment: local, local, scroll, scroll;
+}
+
+.card-actions { flex: 0 0 auto; }
+
+/* The first control in a scrolling body shouldn't start with a label's
+   top margin — it reads as a gap under the heading. */
+.card-body > *:first-child,
+.card-body > *:first-child > .list-head > label { margin-top: 0; }
 
 h1 {
   font-size: 1.45rem;
@@ -333,12 +394,31 @@ select:focus {
 }
 
 /* ---- saved worlds picker ---- */
+/*
+ * Deliberately not scrollable. A card already has exactly one scrolling
+ * region — its body — and a second one nested inside it is miserable to
+ * use: the wheel fights over which list it belongs to. A long list is
+ * bounded by paging it instead, which costs no scrollbar at all.
+ */
 .worlds {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
-  max-height: 13rem;
-  overflow-y: auto;
+}
+
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.7rem;
+  margin-top: 0.45rem;
+}
+
+/* The generic .world-btn:disabled means "working on it"; a pager button is
+   disabled because there is simply nowhere further to go. */
+.pager .world-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
 }
 
 .world-row {
@@ -466,18 +546,41 @@ select:focus {
 }
 
 /* ---- joined parties ---- */
-.parties-head {
+/* ---- list heading, search and counts (worlds and parties alike) ---- */
+.list-head {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: 0.6rem;
 }
 
-.parties-head label { margin-bottom: 0.35rem; }
+.list-head label { margin-bottom: 0.35rem; }
 
-/* The list can hold several parties at once; each row is taller than a
-   world row (status line, address, buttons), so give it more room. */
-#parties-list { max-height: 18rem; }
+.list-head-end {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Only appears once a list is long enough to be worth searching. */
+.list-search {
+  width: 100%;
+  font-size: 0.88rem;
+  padding: 0.4rem 0.6rem;
+  margin-bottom: 0.4rem;
+  border: 2px solid #d8cfb8;
+  border-radius: 4px;
+  background: #fff;
+  color: var(--ink);
+}
+
+.list-search:focus {
+  outline: 3px solid var(--torch);
+  outline-offset: 1px;
+  border-color: var(--torch);
+}
+
+
 
 .party-row {
   display: flex;

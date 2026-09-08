@@ -90,9 +90,13 @@ const devIcon = (): string | undefined => {
 function createWindow() {
   win = new BrowserWindow({
     width: 760,
-    height: 640,
+    // Tall enough that a card with a few saved worlds needs no scrolling at
+    // all. Past that the card scrolls inside itself — the action button is
+    // pinned either way (see .card-split in the stylesheet), so the minimum
+    // only has to leave the scrolling middle something to show.
+    height: 720,
     minWidth: 560,
-    minHeight: 480,
+    minHeight: 520,
     title: "Craftparty",
     icon: devIcon(),
     backgroundColor: "#a5d9f2",
