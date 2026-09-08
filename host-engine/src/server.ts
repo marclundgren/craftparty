@@ -5,7 +5,11 @@ import path from "node:path";
 import { spawn, type ChildProcess } from "node:child_process";
 import { downloadFile } from "./download.ts";
 import { trackChild } from "./pids.ts";
-import { resolveLatestFabricServer, type FabricServer } from "./versions.ts";
+import {
+  resolveFabricServer,
+  resolveLatestFabricServer,
+  type FabricServer,
+} from "./versions.ts";
 import { findFreePort } from "./net-util.ts";
 import { syncAddons, type AddonJarRef } from "./addons.ts";
 import { dataDir } from "./platform.ts";
@@ -29,6 +33,12 @@ export interface ServerOptions {
    * (https://aka.ms/MinecraftEULA). The UI must ask the user explicitly.
    */
   acceptEula: boolean;
+  /**
+   * The Minecraft version to run. A world's pinned version (see
+   * worlds.ts) — omitted or null means this world has none yet, and the
+   * newest one Fabric can serve is used and reported back in the handle.
+   */
+  minecraftVersion?: string | null;
   /** Marketplace addon jars synced into the world's mods folder. */
   addons?: AddonJarRef[];
   memoryMb?: number;
@@ -56,9 +66,12 @@ export interface ServerHandle {
 }
 
 export async function ensureServerJar(
+  minecraftVersion?: string | null,
   onProgress?: (received: number, total: number | null) => void,
 ): Promise<{ jarPath: string; versions: FabricServer }> {
-  const versions = await resolveLatestFabricServer();
+  const versions = minecraftVersion
+    ? await resolveFabricServer(minecraftVersion)
+    : await resolveLatestFabricServer();
   const jarPath = path.join(
     dataDir(),
     "server",
@@ -75,7 +88,7 @@ export async function startServer(opts: ServerOptions): Promise<ServerHandle> {
     );
   }
   const port = opts.port ?? (await findFreePort(25565));
-  const { jarPath, versions } = await ensureServerJar();
+  const { jarPath, versions } = await ensureServerJar(opts.minecraftVersion);
 
   const worldDir = opts.worldDir;
   await fsp.mkdir(worldDir, { recursive: true });

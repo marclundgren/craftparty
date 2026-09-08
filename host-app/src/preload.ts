@@ -22,6 +22,7 @@ contextBridge.exposeInMainWorld("craftparty", {
   forgetParty: (partyId: string) => ipcRenderer.invoke("forget-party", partyId),
   copy: (text: string) => ipcRenderer.invoke("copy", text),
   getAddons: () => ipcRenderer.invoke("get-addons"),
+  minecraftVersion: () => ipcRenderer.invoke("minecraft-version"),
   openMarketplace: () => ipcRenderer.invoke("open-marketplace"),
   openSponsors: () => ipcRenderer.invoke("open-sponsors"),
   updateState: () => ipcRenderer.invoke("update-state"),

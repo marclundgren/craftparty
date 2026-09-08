@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import fsp from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import zlib from "node:zlib";
 
 // worlds.ts resolves the data dir at call time from CRAFTPARTY_HOME, so
 // point it at a scratch directory before importing anything.
@@ -65,6 +66,7 @@ test("listWorlds includes worlds saved before metadata existed", async () => {
   assert.ok(legacy, "a bare world directory is still a world");
   assert.equal(legacy.name, "old-world");
   assert.ok(legacy.lastPlayedAt, "falls back to the directory's mtime");
+  assert.equal(legacy.minecraftVersion, null, "nothing to claim about it");
 });
 
 test("listWorlds reports size and sorts most recently played first", async () => {
@@ -74,6 +76,43 @@ test("listWorlds reports size and sorts most recently played first", async () =>
   const worlds = await listWorlds();
   assert.equal(worlds[0].id, "big-world", "just played, so it leads the list");
   assert.ok(worlds[0].sizeBytes >= 4096);
+});
+
+test("a world keeps the Minecraft version it was made on", async () => {
+  const world = await createWorld("Pinned", "26.2");
+  assert.equal(world.minecraftVersion, "26.2");
+  assert.equal((await getWorld(world.id)).minecraftVersion, "26.2");
+
+  // A later run on a newer Minecraft must not move the save forward: the
+  // upgrade is one-way, and the host never asked for it.
+  await recordPlayed(world.id, [], "26.3");
+  assert.equal((await getWorld(world.id)).minecraftVersion, "26.2");
+});
+
+test("a world with no version yet is stamped the first time it runs", async () => {
+  // Created while Fabric was unreachable, or saved before versions were
+  // recorded at all — either way the first successful host settles it.
+  const world = await createWorld("Unpinned");
+  assert.equal(world.minecraftVersion, null);
+  await recordPlayed(world.id, ["welcome-party"], "26.2");
+  const played = await getWorld(world.id);
+  assert.equal(played.minecraftVersion, "26.2");
+  assert.deepEqual(played.addonIds, ["welcome-party"]);
+});
+
+test("a world from before versions were recorded is read from its save", async () => {
+  // The case that matters most: worlds that already exist on a host's
+  // machine. Nothing is written down for them, so the save itself has to
+  // answer — otherwise continuing one is a coin flip on whether it gets
+  // upgraded.
+  const world = await createWorld("Older World");
+  const save = path.join(world.dir, "world");
+  await fsp.mkdir(save, { recursive: true });
+  await fsp.writeFile(path.join(save, "level.dat"), levelDat("26.1"));
+
+  assert.equal((await getWorld(world.id)).minecraftVersion, "26.1");
+  const listed = (await listWorlds()).find((w) => w.id === world.id);
+  assert.equal(listed?.minecraftVersion, "26.1");
 });
 
 test("deleting a world removes it for good", async () => {
@@ -95,6 +134,30 @@ test("ids that escape the worlds directory are refused", async () => {
   // The worlds directory itself is still there.
   assert.ok((await fsp.stat(worldsDir())).isDirectory());
 });
+
+/** A gzipped level.dat carrying just the version stamp. */
+function levelDat(version: string): Buffer {
+  const str = (s: string) => {
+    const body = Buffer.from(s, "utf8");
+    const len = Buffer.alloc(2);
+    len.writeUInt16BE(body.length);
+    return Buffer.concat([len, body]);
+  };
+  const compound = (name: string, ...fields: Buffer[]) =>
+    Buffer.concat([Buffer.from([10]), str(name), ...fields, Buffer.from([0])]);
+  return zlib.gzipSync(
+    compound(
+      "",
+      compound(
+        "Data",
+        compound(
+          "Version",
+          Buffer.concat([Buffer.from([8]), str("Name"), str(version)]),
+        ),
+      ),
+    ),
+  );
+}
 
 test.after(async () => {
   await fsp.rm(home, { recursive: true, force: true });

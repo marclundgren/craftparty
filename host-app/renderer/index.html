@@ -85,6 +85,16 @@
 
         <label for="seed">Seed</label>
         <input id="seed" type="text" maxlength="64" placeholder="Leave blank for a random world" autocomplete="off" />
+
+        <!-- Not a choice: new worlds are made on the newest Minecraft the
+             server can actually run, which is what Fabric has published a
+             loader for and lags a Minecraft release by a few days. app.js
+             asks the main process for it; the world keeps it for good. -->
+        <label>Minecraft version</label>
+        <p id="new-world-version" class="version-line">
+          <span class="version-tag" hidden></span>
+          <span class="version-note">Checking which version your world can run…</span>
+        </p>
       </div>
 
       <label class="check">
@@ -132,6 +142,14 @@
     <section id="running" class="card" hidden>
       <h1><span class="dot"></span> <span id="running-title">Your world is running</span></h1>
       <p class="hint" id="running-detail"></p>
+
+      <!-- Right under the title, because it is the first thing that has to
+           be true for anyone — host or friend — to get in: the wrong
+           client version is refused at the door. -->
+      <p id="running-version" class="version-line" hidden>
+        <span class="version-tag"></span>
+        <span class="version-note"></span>
+      </p>
 
       <label for="host-address">Start playing — in Minecraft: Multiplayer → Direct Connection</label>
       <div class="invite-row">

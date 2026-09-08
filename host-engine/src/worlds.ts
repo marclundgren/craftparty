@@ -1,5 +1,6 @@
 import fsp from "node:fs/promises";
 import path from "node:path";
+import { saveVersion } from "./level-dat.ts";
 import { dataDir } from "./platform.ts";
 
 /**
@@ -20,6 +21,21 @@ export interface WorldMeta {
   lastPlayedAt: string | null;
   /** Addons chosen the last time this world was hosted. */
   addonIds: string[];
+  /**
+   * The Minecraft version this world runs, pinned when it is created and
+   * kept for its whole life. A save is upgraded in place the first time a
+   * newer Minecraft opens it and can never be opened by the old one
+   * again, so "always the latest" would quietly take a world somewhere
+   * its host can't come back from — and take their friends' clients with
+   * it. New worlds get today's newest (see versions.ts); old ones keep
+   * what they have.
+   *
+   * A world made before this was recorded has nothing written down, so
+   * it is read back from the save itself (see level-dat.ts) — which is
+   * the same stamp Minecraft would consult before upgrading it. null is
+   * left only for a world with no save yet: nothing has decided.
+   */
+  minecraftVersion: string | null;
 }
 
 export interface World extends WorldMeta {
@@ -76,6 +92,10 @@ async function readMeta(id: string, dir: string): Promise<WorldMeta> {
       createdAt: meta.createdAt ?? new Date(0).toISOString(),
       lastPlayedAt: meta.lastPlayedAt ?? null,
       addonIds: Array.isArray(meta.addonIds) ? meta.addonIds : [],
+      minecraftVersion:
+        typeof meta.minecraftVersion === "string"
+          ? meta.minecraftVersion
+          : await saveVersion(dir),
     };
   } catch {
     // A world from before metadata existed (or an unreadable file):
@@ -88,6 +108,7 @@ async function readMeta(id: string, dir: string): Promise<WorldMeta> {
       createdAt: stat.birthtime.toISOString(),
       lastPlayedAt: stat.mtime.toISOString(),
       addonIds: [],
+      minecraftVersion: await saveVersion(dir),
     };
   }
 }
@@ -145,8 +166,17 @@ export async function worldExists(id: string): Promise<boolean> {
   }
 }
 
-/** Create a brand-new world. Refuses to reuse an existing one. */
-export async function createWorld(name: string): Promise<World> {
+/**
+ * Create a brand-new world. Refuses to reuse an existing one.
+ *
+ * minecraftVersion is the version the world is pinned to for good; null
+ * (the caller couldn't reach Fabric) leaves it to be stamped on the
+ * first successful host.
+ */
+export async function createWorld(
+  name: string,
+  minecraftVersion: string | null = null,
+): Promise<World> {
   const id = worldId(name);
   if (await worldExists(id)) {
     throw new Error(
@@ -161,21 +191,33 @@ export async function createWorld(name: string): Promise<World> {
     createdAt: new Date().toISOString(),
     lastPlayedAt: null,
     addonIds: [],
+    minecraftVersion,
   };
   await writeMeta(dir, meta);
   return { ...meta, id, dir };
 }
 
 /** Resume the world with this name, creating it if it's new. */
-export async function ensureWorld(name: string): Promise<World> {
+export async function ensureWorld(
+  name: string,
+  minecraftVersion: string | null = null,
+): Promise<World> {
   const id = worldId(name);
-  return (await worldExists(id)) ? getWorld(id) : createWorld(name);
+  return (await worldExists(id))
+    ? getWorld(id)
+    : createWorld(name, minecraftVersion);
 }
 
-/** Stamp a world as played now, remembering the addons it ran with. */
+/**
+ * Stamp a world as played now, remembering the addons it ran with and
+ * the Minecraft version it actually ran. The pin is written once and
+ * then left alone: a world that already has one keeps it, whatever a
+ * later run reports.
+ */
 export async function recordPlayed(
   id: string,
   addonIds: string[],
+  minecraftVersion: string | null = null,
 ): Promise<void> {
   const world = await getWorld(id);
   await writeMeta(world.dir, {
@@ -184,6 +226,7 @@ export async function recordPlayed(
     createdAt: world.createdAt,
     lastPlayedAt: new Date().toISOString(),
     addonIds,
+    minecraftVersion: world.minecraftVersion ?? minecraftVersion,
   });
 }
 
