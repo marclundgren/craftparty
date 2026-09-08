@@ -11,6 +11,11 @@ electron-builder posts that as the GitHub release body. See
 
 ## Unreleased
 
+- ❤️ **Sponsor Craftparty.** A quiet Sponsor button in the app's top bar
+  opens GitHub Sponsors in your browser, and the website has a page
+  section explaining what sponsoring pays for. Craftparty stays free, and
+  nothing about paying happens inside the app.
+
 ## 0.7.0 — see who's up
 
 - 🗂️ **Your parties, in one list.** The Join tab now remembers every party

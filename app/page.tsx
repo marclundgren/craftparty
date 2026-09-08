@@ -1,5 +1,7 @@
 import DownloadButton, { RELEASES_URL } from "./download-button";
 
+const SPONSORS_URL = "https://github.com/sponsors/marclundgren";
+
 export default function Home() {
   return (
     <main>
@@ -19,6 +21,7 @@ export default function Home() {
               <a href="#join">Got an invite?</a>
               <a href="/marketplace">Marketplace</a>
               <a href="#faq">FAQ</a>
+              <a href="#sponsor">Sponsor</a>
               <a href="https://github.com/marclundgren/craftparty">GitHub</a>
             </div>
           </nav>
@@ -178,8 +181,10 @@ export default function Home() {
             <details>
               <summary>Is it really free?</summary>
               <p>
-                Yes — Craftparty is free and open source. Everyone still needs
-                their own copy of Minecraft Java Edition to play.
+                Yes — Craftparty is free and open source, and there is no paid
+                tier. Everyone still needs their own copy of Minecraft Java
+                Edition to play. If you want to chip in anyway, you can{" "}
+                <a href="#sponsor">sponsor the project</a>.
               </p>
             </details>
             <details>
@@ -218,6 +223,40 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ---- sponsor ---- */}
+      <section className="section section-alt" id="sponsor">
+        <div className="wrap">
+          <div className="hearts" aria-hidden="true">
+            <span className="heart" />
+            <span className="heart" />
+            <span className="heart" />
+          </div>
+          <p className="eyebrow">Support</p>
+          <h2>Keep the party going</h2>
+          <p className="intro">
+            Craftparty is free and open source, and it stays that way.
+            Sponsoring pays for the things that do cost money — the relay
+            that helps friends connect when a home internet provider blocks
+            hosting, and the time to keep the app working as Minecraft
+            changes.
+          </p>
+          <div className="cta-row">
+            <a
+              className="btn btn-sponsor"
+              href={SPONSORS_URL}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Sponsor on GitHub
+            </a>
+          </div>
+          <p className="fineprint">
+            Monthly or one-off, any amount, cancel whenever — handled entirely
+            by GitHub Sponsors.
+          </p>
+        </div>
+      </section>
+
       {/* ---- underground ---- */}
       <footer className="underground">
         <div className="wrap">
@@ -226,6 +265,7 @@ export default function Home() {
             <a href="/marketplace">Marketplace</a>
             <a href="https://github.com/marclundgren/craftparty">GitHub</a>
             <a href="#faq">FAQ</a>
+            <a href={SPONSORS_URL}>Sponsor</a>
           </div>
           <p className="disclaimer">
             NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED
