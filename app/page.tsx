@@ -1,4 +1,10 @@
+import Image from "next/image";
+import Link from "next/link";
 import DownloadButton, { RELEASES_URL } from "./download-button";
+// A real capture of the app, taken through Electron itself — see the
+// capture script in the repo's tooling. Statically imported so Next knows
+// its dimensions and the hero never shifts while it loads.
+import appShot from "./craftparty-app.png";
 
 const SPONSORS_URL = "https://github.com/sponsors/marclundgren";
 
@@ -13,13 +19,13 @@ export default function Home() {
 
         <div className="wrap">
           <nav className="nav" aria-label="Main">
-            <a className="logo" href="#">
+            <Link className="logo" href="/">
               Craftparty
-            </a>
+            </Link>
             <div className="nav-links">
               <a href="#host">How it works</a>
               <a href="#join">Got an invite?</a>
-              <a href="/marketplace">Marketplace</a>
+              <Link href="/marketplace">Marketplace</Link>
               <a href="#faq">FAQ</a>
               <a href="#sponsor">Sponsor</a>
               <a href="https://github.com/marclundgren/craftparty">GitHub</a>
@@ -27,27 +33,39 @@ export default function Home() {
           </nav>
 
           <section className="hero">
-            <h1>
-              Your own Minecraft world.
-              <br />
-              Just for your friends.
-            </h1>
-            <p className="lede">
-              Craftparty turns your computer into a private Minecraft server.
-              One download — no public servers, no port forwarding, no tech
-              skills needed. Your world stays on your machine, and only people
-              you invite can get in.
-            </p>
-            <div className="cta-row">
-              <DownloadButton />
-              <a className="btn btn-secondary" href="#join">
-                I got an invite
-              </a>
+            <div className="hero-copy">
+              <h1>
+                Your own Minecraft world.
+                <br />
+                Just for your friends.
+              </h1>
+              <p className="lede">
+                Craftparty turns your computer into a private Minecraft server.
+                One download — no public servers, no port forwarding, no tech
+                skills needed. Your world stays on your machine, and only people
+                you invite can get in.
+              </p>
+              <div className="cta-row">
+                <DownloadButton />
+                <a className="btn btn-secondary" href="#join">
+                  I got an invite
+                </a>
+              </div>
+              <p className="fineprint">
+                Free &amp; open source · Windows, Mac &amp; Linux · Everyone needs their
+                own Minecraft Java Edition
+              </p>
             </div>
-            <p className="fineprint">
-              Free &amp; open source · Windows &amp; Mac · Everyone needs their
-              own Minecraft Java Edition
-            </p>
+            {/* The whole app, actual size — a download page should show
+                what you are downloading. */}
+            <div className="hero-shot">
+              <Image
+                src={appShot}
+                alt="The Craftparty app with a world called “subi hc” running, showing the address to connect to and an invite code to send to friends."
+                sizes="(max-width: 64rem) 92vw, 60rem"
+                priority
+              />
+            </div>
           </section>
         </div>
         <div className="ground-strip" aria-hidden="true" />
@@ -67,7 +85,7 @@ export default function Home() {
               <span className="step-tag">Step 1</span>
               <h3>Download Craftparty</h3>
               <p>
-                Get the app for Windows or Mac. It sets up everything it needs
+                Get the app for Windows, Mac, or Linux. It sets up everything it needs
                 on its own — nothing else to install, nothing to configure.
               </p>
             </div>
@@ -205,7 +223,7 @@ export default function Home() {
             <details>
               <summary>Can we use mods?</summary>
               <p>
-                Yes — the <a href="/marketplace">Craftparty Marketplace</a>{" "}
+                Yes — the <Link href="/marketplace">Craftparty Marketplace</Link>{" "}
                 has free addons you can tick on when starting your world.
                 They run on the host&apos;s side, so friends join with
                 completely vanilla Minecraft. Power users can also drop any
@@ -262,7 +280,7 @@ export default function Home() {
         <div className="wrap">
           <div className="links">
             <a href={RELEASES_URL}>Download</a>
-            <a href="/marketplace">Marketplace</a>
+            <Link href="/marketplace">Marketplace</Link>
             <a href="https://github.com/marclundgren/craftparty">GitHub</a>
             <a href="#faq">FAQ</a>
             <a href={SPONSORS_URL}>Sponsor</a>

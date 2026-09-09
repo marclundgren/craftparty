@@ -4,11 +4,13 @@
   "private": true,
   "description": "Craftparty — host a private Minecraft world for your friends.",
   "main": "dist/main.cjs",
+  "desktopName": "io.github.marclundgren.craftparty.desktop",
   "scripts": {
     "build": "esbuild src/main.ts --bundle --platform=node --format=cjs --external:electron --external:electron-updater --outfile=dist/main.cjs && esbuild src/preload.ts --bundle --platform=node --format=cjs --external:electron --outfile=dist/preload.cjs",
     "typecheck": "tsc -p tsconfig.typecheck.json",
     "start": "npm run build && electron .",
-    "dist": "npm run build && electron-builder --publish never"
+    "dist": "npm run build && electron-builder --publish never",
+    "screenshots": "electron --no-sandbox screenshots/capture.cjs"
   },
   "dependencies": {
     "electron-updater": "^6.8.9"
@@ -57,9 +59,12 @@
     },
     "linux": {
       "target": [
-        "AppImage"
+        "AppImage",
+        "deb"
       ],
       "category": "Game",
+      "maintainer": "Marc Lundgren <marclundgren@users.noreply.github.com>",
+      "syncDesktopName": true,
       "artifactName": "Craftparty-${version}.${ext}",
       "icon": "build/icons"
     },

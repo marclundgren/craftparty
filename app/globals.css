@@ -116,16 +116,46 @@ a {
 }
 
 @media (max-width: 40rem) {
+  .nav {
+    flex-wrap: wrap;
+    gap: 0.4rem 1rem;
+    padding-bottom: 0.75rem;
+  }
+
   .nav-links {
-    display: none;
+    margin-left: 0;
+    flex-basis: 100%;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+    font-size: 0.85rem;
   }
 }
-
 .hero {
   position: relative;
   z-index: 2;
-  padding: 4.5rem 0 7rem;
+  padding: 3.5rem 0 4.5rem;
+}
+
+/* The headline is the loudest thing on the page and needs the room to
+   stay two lines; the screenshot goes underneath at the full width of the
+   wrap rather than beside it in a column too narrow for either. */
+.hero-copy {
   max-width: 40rem;
+}
+
+/* Framed like the cards further down the page, so it reads as a window
+   standing in the sky rather than a screenshot pasted over it. */
+.hero-shot {
+  margin-top: 2.75rem;
+}
+
+.hero-shot img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 3px solid var(--paper);
+  border-radius: 6px;
+  box-shadow: 8px 8px 0 rgba(34, 50, 60, 0.18);
 }
 
 .hero h1 {
@@ -147,6 +177,19 @@ a {
 }
 
 .fineprint {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #3a5566;
+}
+
+/* Second Linux format. The .deb is the button; this is the escape hatch
+   for distros that can't take one, so it reads as a link, not a rival.
+   It renders between the two call-to-action buttons, so `order` sends it
+   past them and a full-width basis drops it onto its own line — without
+   it, the escape hatch elbows "I got an invite" onto a row of its own. */
+.alt-download {
+  order: 1;
+  flex-basis: 100%;
   font-size: 0.85rem;
   font-weight: 600;
   color: #3a5566;
@@ -474,9 +517,27 @@ a {
   margin-bottom: 0.75rem;
 }
 
+.faq details {
+  transition: border-color 120ms ease;
+}
+
+.faq details:hover {
+  border-color: #cbbfa5;
+}
+
 .faq summary {
   font-weight: 800;
   cursor: pointer;
+}
+
+.faq summary:hover {
+  color: var(--grass-dark);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .faq details {
+    transition: none;
+  }
 }
 
 .faq details p {
@@ -518,7 +579,7 @@ a {
 .underground .disclaimer {
   font-size: 0.8rem;
   max-width: 40rem;
-  color: #8f8171;
+  color: #a89786;
   margin: 0;
 }
 
