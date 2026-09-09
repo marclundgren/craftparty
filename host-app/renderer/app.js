@@ -47,8 +47,6 @@ function matching(items, query) {
   return q ? items.filter((i) => i.name.toLowerCase().includes(q)) : items;
 }
 
-let netVerdict = null;
-
 function show(section) {
   for (const s of [...HOST_SECTIONS, ...JOIN_SECTIONS]) {
     s.hidden = s !== section;
@@ -243,9 +241,12 @@ function worldRow(world) {
   radio.value = world.id;
   radio.addEventListener("change", () => chooseWorld(world.id));
   const text = document.createElement("span");
+  text.className = "world-text";
   const name = document.createElement("span");
   name.className = "world-name";
   name.textContent = world.name;
+  // Truncated names are still readable on hover.
+  name.title = world.name;
   const meta = document.createElement("span");
   meta.className = "world-meta";
   meta.textContent = [
@@ -344,6 +345,7 @@ function refreshChoice() {
   }
 
   startBtn.textContent = target ? `Continue "${target.name}"` : "Start my world";
+  startBtn.title = target ? `Continue "${target.name}"` : "";
   startBtn.disabled = !(eula.checked && (target || worldName.value.trim()));
   renderNewWorldVersion(target);
 }
@@ -542,30 +544,267 @@ function showReport(prefix, result) {
   row.hidden = false;
 }
 
-// ---- preflight on load ----
+// ---- network verdict ----
+/*
+ * The chip in the corner is one line of answer; the dialog behind it is
+ * the reasoning, and — for the "probably" that most people see — what
+ * exactly is still untested.
+ *
+ * The check itself is preflight/src/probe.ts. It asks the router whether
+ * it will open a door for Minecraft, and compares the address the router
+ * believes it has with the address the internet really sees. What it
+ * never does is have a machine out on the internet knock back on that
+ * door, and that missing knock is the whole of the hedge: everything
+ * checkable checks out, and the last step can't be checked from in here.
+ */
+const netDot = $("net-dot");
+const netStatusText = $("net-status-text");
+const netDialog = $("net-dialog");
+
+/** The preflight report, once it lands. Null while the check is running. */
+let netReport = null;
+
+const IP_KIND_NOTE = {
+  public: "a real address on the internet",
+  cgnat: "shared with other customers of your provider",
+  private: "an address inside a network, not on the internet",
+  "link-local": "an address a device made up for itself",
+  loopback: "this computer talking to itself",
+  invalid: "not an address we recognise",
+};
+
+/**
+ * Everything the chip, the checkbox hint and the dialog say, decided in
+ * one place so they can never disagree about what was found.
+ */
+function netCopy(report) {
+  if (!report) {
+    return {
+      chip: "Checking your network…",
+      dot: "checking",
+      tone: "maybe",
+      hint: "",
+      verdict: "Craftparty is still looking.",
+      body: [[null, "This takes a few seconds: it asks your router a question and looks up the address the internet sees you at."]],
+    };
+  }
+
+  if (report.error) {
+    return {
+      chip: "Network check didn't finish",
+      dot: "offline",
+      tone: "bad",
+      hint: "We couldn't check your network. Internet hosting may not work — you can still try.",
+      verdict: "Craftparty couldn't tell.",
+      body: [
+        [null, "The check has to reach the internet and talk to your router, and one of the two didn't answer."],
+        ["What to do", "Start a party anyway. The check being unavailable doesn't mean hosting is — it only means Craftparty has nothing to promise you in advance."],
+      ],
+    };
+  }
+
+  if (report.verdict === "assisted") {
+    return {
+      chip: "Internet hosting: not available",
+      dot: "offline",
+      tone: "bad",
+      hint:
+        "Your internet provider doesn't allow direct hosting. Assisted mode (via the Craftparty relay) is coming soon — for now, parties are limited to your home network.",
+      verdict: "Not from this network — but your world still works.",
+      body: [
+        [null, assistedCause(report)],
+        [
+          "You can still play together",
+          "Anyone on the same Wi-Fi as you can join a party normally. A Craftparty relay that would carry friends further away is on the way.",
+        ],
+      ],
+    };
+  }
+
+  if (report.verdict === "independent") {
+    return {
+      chip: "Internet hosting: ready",
+      dot: "connected",
+      tone: "good",
+      hint: "Your network supports hosting — friends anywhere can join.",
+      verdict: "Yes — your network is set up for it.",
+      body: [
+        [
+          null,
+          "Your router opens a door for Minecraft when Craftparty asks, and it has a real address on the internet." +
+            // Only claimed when it actually happened: the probe skips the
+            // mapping test unless it is asked for one.
+            (report.mappingTest?.loopbackReached === true
+              ? " A test connection came back through that door."
+              : ""),
+        ],
+        ["What to do", "Start a party and send the invite. That's the whole of it."],
+      ],
+    };
+  }
+
+  return {
+    chip: "Internet hosting: probably works",
+    dot: "online",
+    tone: "maybe",
+    hint:
+      "Your network looks compatible, but we couldn't fully verify it. If friends can't join, uncheck this and party on your home network.",
+    verdict: "Probably — everything Craftparty can check looks right.",
+    body: [
+      [
+        "What's confirmed",
+        "Your router opens a door for Minecraft when Craftparty asks, and it has a real address on the internet rather than one shared with the whole street. Those are the two things that usually stop a party working.",
+      ],
+      ["Why only “probably”", maybeDoubt(report)],
+      [
+        "What to do",
+        "Start your party and send the invite — this usually just works. If a friend can't get in, come back here, uncheck “Friends join over the internet”, and play on your home network instead.",
+      ],
+    ],
+  };
+}
+
+/** Why a network can't host at all, in the terms the host can act on. */
+function assistedCause(report) {
+  if (report.publicIpKind === "cgnat") {
+    return "Your internet provider gives your home an address it shares with many other customers, so there is no door it could open for you alone. Nothing here can accept a connection from outside.";
+  }
+  if (!report.upnp?.found) {
+    return "No router on this network answered Craftparty's request to open a door for Minecraft. That usually means UPnP is switched off in the router's settings — turning it on, or forwarding port 25565 to this computer by hand, would give friends a way in.";
+  }
+  if (report.upnp.externalIpKind && report.upnp.externalIpKind !== "public") {
+    return "Your router will open a door, but it opens onto another network rather than the internet — there is a second router, or your provider's own equipment, sitting above it. A port opened on the router you can see doesn't reach anybody.";
+  }
+  return "Something on the path between this computer and the internet won't let a connection in from outside.";
+}
+
+/**
+ * The honest content of the hedge. Usually it is the untested last step;
+ * where the probe actually saw a second layer of network, say that
+ * instead — it is a specific thing to go and look at.
+ */
+function maybeDoubt(report) {
+  const routerIp = report.upnp?.externalIp;
+  if (routerIp && report.publicIp && routerIp !== report.publicIp) {
+    return `Your router thinks its address is ${routerIp}, but the internet sees this computer as ${report.publicIp}. A gap like that usually means a second router — or your provider's own equipment — sits above yours, and a door opened here may only open onto that middle network.`;
+  }
+  return "The only real proof is someone out on the internet knocking on that door. Craftparty has no server out there to knock, and most routers won't let this computer knock on its own address from inside the house — so the last step goes untested.";
+}
+
+/** The chip, plus the two controls the verdict actually governs. */
+function paintNetwork() {
+  const copy = netCopy(netReport);
+  netStatusText.textContent = copy.chip;
+  netDot.className = `chip-dot ${copy.dot}`;
+  remoteHint.textContent = copy.hint;
+}
+
+function renderNetDialog() {
+  const copy = netCopy(netReport);
+  const verdict = $("net-dialog-verdict");
+  verdict.className = `modal-verdict tone-${copy.tone}`;
+  verdict.textContent = copy.verdict;
+
+  const body = $("net-dialog-body");
+  body.replaceChildren(
+    ...copy.body.map(([heading, text]) => {
+      const p = document.createElement("p");
+      if (heading) {
+        const strong = document.createElement("strong");
+        strong.textContent = `${heading}: `;
+        p.append(strong);
+      }
+      p.append(text);
+      return p;
+    }),
+  );
+
+  // The findings themselves, folded away — of no use to most people and
+  // the first thing anyone debugging a router will want.
+  const facts = $("net-dialog-facts");
+  facts.replaceChildren(...netFacts(netReport).flatMap(([term, code, note]) => {
+    const dt = document.createElement("dt");
+    dt.textContent = term;
+    const dd = document.createElement("dd");
+    if (code) {
+      const el = document.createElement("code");
+      el.textContent = code;
+      dd.append(el, " ");
+    }
+    if (note) dd.append(note);
+    return [dt, dd];
+  }));
+  const notes = [...(netReport?.reasons ?? []), ...(netReport?.warnings ?? [])];
+  $("net-dialog-reasons").textContent = notes.join(" ");
+  $("net-dialog-reasons").hidden = notes.length === 0;
+}
+
+/** What the probe actually found, as [label, address or null, plain note]. */
+function netFacts(report) {
+  if (!report || report.error) {
+    return [["Result", null, report?.error ?? "still checking…"]];
+  }
+  const address = (label, ip, kind) =>
+    ip
+      ? [label, ip, kind ? `— ${IP_KIND_NOTE[kind] ?? kind}` : ""]
+      : [label, null, "couldn't tell"];
+
+  const facts = [
+    address("The address the internet sees", report.publicIp, report.publicIpKind),
+    [
+      "Router",
+      null,
+      report.upnp?.found ? (report.upnp.friendlyName ?? "found, unnamed") : "none answered",
+    ],
+  ];
+  if (report.upnp?.found) {
+    facts.push(
+      address(
+        "The address your router thinks it has",
+        report.upnp.externalIp,
+        report.upnp.externalIpKind,
+      ),
+    );
+  }
+  if (report.mappingTest?.ran) {
+    facts.push([
+      "Test door",
+      null,
+      report.mappingTest.mapped
+        ? report.mappingTest.loopbackReached === true
+          ? "opened, and a connection came back through it"
+          : "opened, but the knock-back test was inconclusive"
+        : `couldn't be opened — ${report.mappingTest.error ?? "unknown error"}`,
+    ]);
+  }
+  return facts;
+}
+
+netStatus.addEventListener("click", () => {
+  renderNetDialog();
+  netDialog.showModal();
+});
+$("net-dialog-done").addEventListener("click", () => netDialog.close());
+$("net-dialog-x").addEventListener("click", () => netDialog.close());
+// Clicking the dimmed area around the dialog closes it: the click lands on
+// the <dialog> itself only when it misses the padded box inside.
+netDialog.addEventListener("click", (event) => {
+  if (event.target === netDialog) netDialog.close();
+});
+
+paintNetwork();
+
 (async () => {
   const report = await craftparty.preflight();
-  if (report.error) {
-    netStatus.textContent = "network check failed";
-    remoteHint.textContent =
-      "We couldn't check your network. Internet hosting may not work — you can still try.";
-    return;
-  }
-  netVerdict = report.verdict;
-  if (report.verdict === "assisted") {
-    netStatus.textContent = "internet hosting: blocked by your provider";
+  netReport = report;
+  if (!report.error && report.verdict === "assisted") {
     remote.checked = false;
     remote.disabled = true;
-    remoteHint.textContent =
-      "Your internet provider doesn't allow direct hosting. Assisted mode (via the Craftparty relay) is coming soon — for now, parties are limited to your home network.";
-  } else if (report.verdict === "independent") {
-    netStatus.textContent = "internet hosting: ready ✓";
-    remoteHint.textContent = "Your network supports hosting — friends anywhere can join.";
-  } else {
-    netStatus.textContent = "internet hosting: probably works";
-    remoteHint.textContent =
-      "Your network looks compatible, but we couldn't fully verify it. If friends can't join, uncheck this and party on your home network.";
   }
+  paintNetwork();
+  // The dialog can already be open — someone can ask the question before
+  // the answer arrives — so keep whatever is on screen current.
+  if (netDialog.open) renderNetDialog();
 })();
 
 // ---- addons ----
@@ -663,6 +902,7 @@ startBtn.addEventListener("click", async () => {
   $("invite").value = result.inviteCode;
   $("host-address").value = `localhost:${result.port}`;
   $("running-title").textContent = `"${result.worldName}" is running`;
+  $("running-title").title = result.worldName;
   $("running-detail").textContent = result.remote
     ? "Friends anywhere on the internet can join with your invite."
     : "Friends on your home network can join with your invite.";
@@ -672,7 +912,7 @@ startBtn.addEventListener("click", async () => {
     paintVersion(
       $("running-version"),
       result.minecraftVersion,
-      "Launch this Minecraft version to play — you and your friends both.",
+      "Launch this Minecraft version to play — friends too.",
     );
   }
   rememberSection(running);
@@ -794,6 +1034,7 @@ function partyRow(party) {
   const name = document.createElement("span");
   name.className = "world-name";
   name.textContent = party.name;
+  name.title = party.name;
   const meta = document.createElement("span");
   meta.className = "world-meta party-meta";
   meta.textContent = statusLine(party, status);

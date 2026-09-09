@@ -39,46 +39,104 @@ body {
   background: linear-gradient(to bottom, var(--sky-hi), var(--sky) 60%, #c9e8ee);
 }
 
+/*
+ * Two rows of chrome and no more: who you are looking at and how to reach
+ * the outside world, then the one choice the whole app is about. Anything
+ * that is merely true — the version, the update state — waits at the
+ * bottom of the window instead (see .statusbar).
+ */
 .topbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.9rem 1.4rem;
+  gap: 0.6rem;
+  padding: 0.85rem 1.2rem 0.7rem;
 }
 
 .logo {
   font-weight: 800;
   font-size: 1.15rem;
   letter-spacing: 0.03em;
+  color: var(--ink);
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  line-height: 1.2;
+}
+
+.logo:hover {
+  border-bottom-color: rgba(34, 50, 60, 0.35);
+}
+
+.logo:focus-visible {
+  outline: 3px solid var(--torch);
+  outline-offset: 3px;
+  border-radius: 2px;
 }
 
 .topbar-end {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.45rem;
+  min-width: 0;
 }
 
-/* Quiet by default — this should read as available, not as an ask. */
-.sponsor-btn {
+/*
+ * One shape for both corner controls. They sat at different weights
+ * before — one a button, one a bare label — which read as two unrelated
+ * things dropped in the same corner. Both are buttons; both look it.
+ */
+.chip {
   display: flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.4rem;
+  min-width: 0;
   font-family: inherit;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-weight: 700;
   color: #2d4250;
-  background: rgba(255, 255, 255, 0.55);
-  border: 2px solid transparent;
+  background: rgba(255, 255, 255, 0.6);
+  border: 2px solid rgba(255, 255, 255, 0.35);
   border-radius: 999px;
-  padding: 0.2rem 0.7rem;
+  padding: 0.25rem 0.75rem;
   cursor: pointer;
+  white-space: nowrap;
 }
 
-.sponsor-btn:hover {
+.chip:hover {
   background: var(--paper);
-  border-color: #eccdc8;
-  color: var(--danger);
+  border-color: #e4dcc8;
 }
+
+.chip:focus-visible {
+  outline: 3px solid var(--torch);
+  outline-offset: 2px;
+}
+
+.chip-net > span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Same vocabulary as the party list's dots: green is good, amber is
+   "as far as we can tell", grey is no. */
+.chip-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  flex-shrink: 0;
+  background: #b9b0a0;
+}
+
+.chip-dot.connected { background: var(--grass); }
+.chip-dot.online { background: var(--torch); }
+.chip-dot.offline { background: #9aa7ae; }
+.chip-dot.checking { animation: pulse 1.2s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .chip-dot.checking { animation: none; }
+}
+
+.chip-sponsor:hover { color: var(--danger); border-color: #eccdc8; }
 
 /* A glyph, not the website's pixel heart: at button size the CSS-block
    version collapses into an unreadable blob. */
@@ -88,22 +146,13 @@ body {
   line-height: 1;
 }
 
-.sponsor-btn:hover .sponsor-heart { color: var(--danger); }
-
-.net-status {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: #2d4250;
-  background: rgba(255, 255, 255, 0.55);
-  border-radius: 999px;
-  padding: 0.25rem 0.75rem;
-}
+.chip-sponsor:hover .sponsor-heart { color: var(--danger); }
 
 .tabs {
   display: flex;
   justify-content: center;
-  gap: 0.6rem;
-  padding: 0.2rem 1rem 0;
+  gap: 0.5rem;
+  padding: 0 1rem;
 }
 
 .tab {
@@ -209,6 +258,20 @@ textarea:focus {
 
 .card-actions { flex: 0 0 auto; }
 
+/* For a card whose action isn't the big green one: the button keeps its
+   own width and the reassurance sits beside it rather than under. */
+.card-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  margin-top: 1.1rem;
+  padding-top: 0.9rem;
+  border-top: 2px solid #f0e9d8;
+}
+
+.card-actions-row .btn { margin-top: 0; flex-shrink: 0; }
+.card-actions-row .hint { margin: 0; }
+
 /* The first control in a scrolling body shouldn't start with a label's
    top margin — it reads as a gap under the heading. */
 .card-body > *:first-child,
@@ -220,6 +283,14 @@ h1 {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  min-width: 0;
+}
+
+#running-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 label {
@@ -275,6 +346,7 @@ select:focus {
   font-size: 0.82rem;
   color: var(--ink-soft);
   margin: 0.45rem 0 0;
+  overflow-wrap: anywhere;
 }
 
 .error {
@@ -296,6 +368,9 @@ select:focus {
 
 .btn-primary {
   width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   background: var(--grass);
   color: #fff;
   box-shadow: 0 4px 0 var(--grass-deep);
@@ -365,6 +440,7 @@ select:focus {
 }
 
 .dot {
+  flex-shrink: 0;
   width: 0.7rem;
   height: 0.7rem;
   border-radius: 999px;
@@ -449,19 +525,30 @@ select:focus {
   color: var(--ink-soft);
 }
 
+/*
+ * Sized to sit on the text line beside it, not to float above it. The
+ * baselines line up either way — flex baseline alignment sees to that —
+ * but a box with room to spare above and below the digits overhangs the
+ * note's first line and reads as a tag that missed its line.
+ */
 .version-tag {
   font-family: ui-monospace, monospace;
   font-size: 0.85rem;
   font-weight: 700;
+  line-height: 1.2;
   color: var(--grass-deep);
   background: #eef7e6;
   border: 2px solid #cfe6bd;
   border-radius: 4px;
-  padding: 0.1rem 0.4rem;
+  padding: 0 0.35rem;
 }
 
 /* Nothing to show yet, or nothing we could check — the note stands alone. */
-.version-note { flex: 1; min-width: 12rem; }
+.version-note {
+  flex: 1;
+  min-width: 12rem;
+  overflow-wrap: anywhere;
+}
 
 /* ---- saved worlds picker ---- */
 /*
@@ -482,6 +569,32 @@ select:focus {
   justify-content: center;
   gap: 0.7rem;
   margin-top: 0.45rem;
+}
+
+/*
+ * A row's own buttons are quiet until you go for them. Folder and Delete
+ * repeat on every row, and drawn as fully outlined buttons they made a
+ * list of worlds read as a list of things to delete — while eating the
+ * width the name and its details need to stay on one line.
+ */
+.world-actions .world-btn {
+  background: transparent;
+  border-color: transparent;
+  padding: 0.3rem 0.45rem;
+}
+
+.world-row:hover .world-actions .world-btn,
+.party-row:hover .world-actions .world-btn,
+.world-actions .world-btn:focus-visible {
+  background: #fff;
+  border-color: #e3d9c8;
+}
+
+.world-actions .world-btn-danger { color: var(--ink-soft); }
+
+.world-actions .world-btn-danger:hover {
+  color: var(--danger);
+  border-color: #eccdc8;
 }
 
 /* The generic .world-btn:disabled means "working on it"; a pager button is
@@ -518,6 +631,16 @@ select:focus {
 }
 
 .world-pick input { width: 1.05rem; height: 1.05rem; accent-color: var(--grass); }
+/*
+ * Names are the one piece of text here nobody else wrote the length of.
+ * Every place one is shown either truncates it or lets it break, and the
+ * full name is on the element's title either way. A flex item only
+ * truncates when it is allowed to shrink below its content, which is what
+ * every min-width:0 on this path is for.
+ */
+.world-text {
+  min-width: 0;
+}
 
 .world-name {
   display: block;
@@ -529,8 +652,10 @@ select:focus {
 
 .world-meta {
   display: block;
+  overflow-wrap: anywhere;
   font-size: 0.78rem;
   font-weight: 400;
+  line-height: 1.35;
   color: var(--ink-soft);
 }
 
@@ -559,20 +684,32 @@ select:focus {
 
 .world-btn:disabled { opacity: 0.5; cursor: progress; }
 
-/* ---- update bar ---- */
-.update-bar {
+/* ---- footer status bar ---- */
+/*
+ * Which build this is and what the updater is doing. It used to sit
+ * between the tabs and the card, where it was the third thing anyone read
+ * on the way to a button — and where a routine "up to date" outweighed
+ * the two choices the app exists for. Along the bottom edge it is still
+ * always legible and never in the way.
+ */
+.footer { flex: 0 0 auto; }
+
+.statusbar {
   display: flex;
   align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 0.6rem;
-  padding: 0.55rem 1rem 0;
-  font-size: 0.8rem;
+  gap: 0.55rem;
+  padding: 0.4rem 1.2rem 0.5rem;
+  font-size: 0.76rem;
   color: #2d4250;
 }
 
+.statusbar-gap { flex: 1; }
+
 .update-text {
   font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .update-btn {
@@ -607,11 +744,9 @@ select:focus {
 }
 
 .update-note {
-  margin: 0.3rem auto 0;
-  padding: 0 1rem;
-  max-width: 34rem;
-  text-align: center;
-  font-size: 0.78rem;
+  margin: 0;
+  padding: 0.4rem 1.2rem 0;
+  font-size: 0.76rem;
   color: #3c5464;
 }
 
@@ -680,9 +815,8 @@ select:focus {
 }
 
 .party-sub {
-  font-size: 0.72rem;
-  font-family: ui-monospace, monospace;
-  opacity: 0.75;
+  font-size: 0.75rem;
+  opacity: 0.8;
 }
 
 .party-connect input {
@@ -723,3 +857,129 @@ select:focus {
 @media (prefers-reduced-motion: reduce) {
   .party-dot.checking { animation: none; }
 }
+
+/* ---- scrollbars ---- */
+/*
+ * A card that scrolls should look like it meant to. The platform default
+ * is a grey bar bolted to the paper edge, wide enough to crowd the
+ * content it is scrolling; this is the same idea in the card's own
+ * colours, and thin enough that its arrival isn't an event.
+ */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #ddd3bd transparent;
+}
+
+/* ---- dialogs ---- */
+/*
+ * One modal shape for the whole app: a card, on the same paper, over a
+ * dimmed sky. It answers a question the user asked by clicking something,
+ * so it closes every way anyone might try — the ✕, the button, Escape,
+ * or the dimmed area around it.
+ */
+.modal {
+  width: min(30rem, 90vw);
+  max-height: 84vh;
+  margin: auto;
+  padding: 1.6rem 1.8rem 1.4rem;
+  border: 2px solid #e4dcc8;
+  border-radius: 6px;
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 6px 6px 0 rgba(34, 50, 60, 0.18);
+  overflow-y: auto;
+}
+
+.modal::backdrop {
+  background: rgba(21, 40, 52, 0.45);
+}
+
+.modal h2 {
+  font-size: 1.2rem;
+  margin: 0 1.6rem 0.5rem 0;
+  line-height: 1.25;
+}
+
+.modal-x {
+  position: absolute;
+  top: 0.9rem;
+  right: 1rem;
+  font-family: inherit;
+  font-size: 1.3rem;
+  line-height: 1;
+  color: var(--ink-soft);
+  background: none;
+  border: 0;
+  padding: 0.1rem 0.3rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.modal-x:hover { color: var(--ink); background: #f1ead8; }
+
+/* The answer itself, before any of the reasoning under it. */
+.modal-verdict {
+  margin: 0 0 0.9rem;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.modal-body p {
+  margin: 0 0 0.75rem;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+.modal-body strong { color: var(--ink); }
+
+.modal-details {
+  margin-top: 0.4rem;
+  border-top: 2px solid #f0e9d8;
+  padding-top: 0.7rem;
+}
+
+.modal-details summary {
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.25rem 0.8rem;
+  margin: 0.7rem 0 0;
+  font-size: 0.8rem;
+}
+
+.facts dt {
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+
+.facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Only the addresses are monospaced; a router's own name and the plain
+   note beside a number are prose and should read as prose. */
+.facts code {
+  font-family: ui-monospace, monospace;
+  font-size: 0.76rem;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1.1rem;
+}
+
+.modal-actions .btn { margin-top: 0; }
+
+/* The verdict takes the colour of the answer, so the shape of it lands
+   before a word is read. */
+.tone-good { color: var(--grass-deep); }
+.tone-maybe { color: #96631a; }
+.tone-bad { color: var(--danger); }
