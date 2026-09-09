@@ -1,6 +1,6 @@
 {
   "name": "@craftparty/host-app",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "private": true,
   "description": "Craftparty — host a private Minecraft world for your friends.",
   "main": "dist/main.cjs",
@@ -76,7 +76,7 @@
       "releaseType": "release"
     },
     "releaseInfo": {
-      "releaseName": "Craftparty 0.8.0 — which Minecraft you're on",
+      "releaseName": "Craftparty 0.9.0 — a clearer window",
       "releaseNotesFile": "build/release-notes.md"
     }
   },

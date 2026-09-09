@@ -1,29 +1,40 @@
-- 🧱 **Everyone knows which Minecraft to launch.** The version is now on
-  screen wherever you're about to open the game: the new-world form says
-  which version your world will be made on, a running world shows it
-  right above the address you connect to, and every party in the Join tab
-  says which version its host runs — before you connect, so you can start
-  the right client the first time.
-- 🔎 **Your existing worlds already know.** Worlds you made before this
-  update have no version written down, so Craftparty reads it out of the
-  save itself — the same stamp Minecraft checks. They show their version
-  in the list straight away, and continuing one keeps it there.
-- 📌 **New worlds get the newest Minecraft, and keep it.** Craftparty asks
-  the Fabric server project which versions it can actually run, so a
-  world is never made on a version that won't start — in the few days
-  between a Minecraft release and Fabric catching up, you get the newest
-  one that's ready. And your world stays on the version it was made with:
-  opening a save in a newer Minecraft can't be undone, so it never
-  happens behind your back.
-- ❤️ **Sponsor Craftparty.** A quiet Sponsor button in the app's top bar
-  opens GitHub Sponsors in your browser, and the website has a page
-  section explaining what sponsoring pays for. Craftparty stays free, and
-  nothing about paying happens inside the app.
+- 🪟 **A tidier window.** Three rows of buttons and status used to sit
+  between the top of the window and the two things you came to do. Now
+  there are two: Craftparty and your network on one line, Host and Join
+  on the next. Which version you're running and whether an update is
+  waiting moved to a status bar along the bottom, where you can find them
+  when you want them and ignore them when you don't.
+- 🌐 **"Internet hosting: probably works" explains itself.** Click it and
+  Craftparty tells you what it checked — whether your router will open a
+  door for Minecraft, and whether it has a real address on the internet —
+  and what it can't check from inside your house, which is whether
+  someone out there can actually get through that door. That last part is
+  the whole of the "probably". If hosting isn't available at all, it now
+  says which piece of your setup is in the way and what you could try.
+- 📐 **The running screen fits.** The panel with your address and invite
+  had grown a scrollbar that hid its last line. It doesn't scroll any
+  more, and on a small window "Stop the party" stays put instead of
+  scrolling out of reach.
+- ✂️ **Long world names stay in their lane.** Call a world whatever you
+  like — the name is trimmed with an ellipsis wherever it's shown, with
+  the whole thing on hover, instead of stretching the panel out of shape.
+- 🐧 **A .deb for Ubuntu and Debian.** Craftparty installs like a normal
+  app there now: it turns up in your app drawer and updates itself in
+  place. Other distributions can still take the AppImage, and the
+  download page offers whichever suits you.
+- 🔗 **Links open in your browser.** The Minecraft EULA link used to open
+  a bare window inside Craftparty with no address bar and no way back.
+  Every link out of the app goes to your normal browser now — including
+  the Craftparty name in the corner, which is a link to the website.
+- 🖼️ **The website shows the app.** There's a picture of Craftparty
+  actually running a world, so you can see what you're downloading before
+  you download it, and shared links unfurl with the same picture.
 
 ## Downloads
-- **Windows:** Craftparty-Setup-0.8.0.exe
-- **macOS:** Craftparty-0.8.0.dmg
-- **Linux:** Craftparty-0.8.0.AppImage
+- **Windows:** Craftparty-Setup-0.9.0.exe
+- **macOS:** Craftparty-0.9.0.dmg
+- **Linux (Ubuntu/Debian):** Craftparty-0.9.0.deb
+- **Linux (other):** Craftparty-0.9.0.AppImage
 
 ## Heads up: unsigned beta builds
 These builds are not code-signed yet, so your computer will warn you the first time:
