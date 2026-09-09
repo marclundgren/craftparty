@@ -109,9 +109,28 @@ function createWindow() {
   });
   win.setMenuBarVisibility(false);
   win.loadFile(path.join(__dirname, "..", "renderer", "index.html"));
+
+  // Every link out of Craftparty belongs in the real browser. Left to
+  // itself Electron answers target="_blank" with a chromeless window of
+  // its own — no address bar, no back button, no way out of it — and
+  // follows a plain href by replacing the app with the page.
+  win.webContents.setWindowOpenHandler(({ url }) => {
+    openInBrowser(url);
+    return { action: "deny" };
+  });
+  win.webContents.on("will-navigate", (event, url) => {
+    event.preventDefault();
+    openInBrowser(url);
+  });
+
   win.on("closed", () => {
     win = null;
   });
+}
+
+/** Hand a link to the system browser, ignoring anything that isn't one. */
+function openInBrowser(url: string) {
+  if (/^https?:\/\//i.test(url)) void shell.openExternal(url);
 }
 
 // Engine children keep emitting logs while the app tears them down on

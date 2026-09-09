@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { ADDONS } from "../../lib/addons";
 
 export const metadata: Metadata = {
@@ -13,11 +14,11 @@ export default function Marketplace() {
       <div className="sky sky-short">
         <div className="wrap">
           <nav className="nav" aria-label="Main">
-            <a className="logo" href="/">
+            <Link className="logo" href="/">
               Craftparty
-            </a>
+            </Link>
             <div className="nav-links">
-              <a href="/">Home</a>
+              <Link href="/">Home</Link>
               <a href="https://github.com/sponsors/marclundgren">Sponsor</a>
               <a href="https://github.com/marclundgren/craftparty">GitHub</a>
             </div>
@@ -85,7 +86,7 @@ export default function Marketplace() {
       <footer className="underground">
         <div className="wrap">
           <div className="links">
-            <a href="/">Home</a>
+            <Link href="/">Home</Link>
             <a href="https://github.com/sponsors/marclundgren">Sponsor</a>
             <a href="https://github.com/marclundgren/craftparty">GitHub</a>
           </div>

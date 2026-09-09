@@ -8,16 +8,27 @@
 </head>
 <body>
   <header class="topbar">
-    <span class="logo">Craftparty</span>
+    <!-- A real link: the main process routes it to the system browser
+         (see setWindowOpenHandler in main.ts), so hovering shows where it
+         goes and nothing opens inside the app. -->
+    <a class="logo" href="https://craftparty-ten.vercel.app/"
+       target="_blank" rel="noreferrer">Craftparty</a>
     <span class="topbar-end">
+      <!-- The verdict is one chip's worth of answer; the reasoning behind
+           it — and what "probably" is hedging against — lives in the
+           dialog it opens rather than in the corner of every screen. -->
+      <button id="net-status" class="chip chip-net" type="button"
+              aria-haspopup="dialog" title="What does this mean?">
+        <span id="net-dot" class="chip-dot checking" aria-hidden="true"></span>
+        <span id="net-status-text">Checking your network…</span>
+      </button>
       <!-- Deliberately small and always in the same place: available from
            anywhere in the app, never in the way of hosting or joining, and
            never shown at a moment the app has just made someone happy. -->
-      <button id="sponsor" class="sponsor-btn" type="button"
+      <button id="sponsor" class="chip chip-sponsor" type="button"
               title="Support Craftparty on GitHub Sponsors">
         <span class="sponsor-heart" aria-hidden="true">&#9829;</span> Sponsor
       </button>
-      <span id="net-status" class="net-status">checking your network…</span>
     </span>
   </header>
 
@@ -25,16 +36,6 @@
     <button id="tab-host" class="tab active">Host a party</button>
     <button id="tab-join" class="tab">Join a party</button>
   </nav>
-
-  <div class="update-bar">
-    <span id="update-text" class="update-text">Craftparty</span>
-    <button id="update-action" class="update-btn" hidden></button>
-    <label id="update-auto-label" class="update-auto" hidden>
-      <input id="auto-update" type="checkbox" />
-      Update automatically
-    </label>
-  </div>
-  <p id="update-note" class="update-note" hidden></p>
 
   <main>
     <!-- setup -->
@@ -139,8 +140,10 @@
     </section>
 
     <!-- running -->
-    <section id="running" class="card" hidden>
+    <section id="running" class="card card-split" hidden>
       <h1><span class="dot"></span> <span id="running-title">Your world is running</span></h1>
+      <div class="card-body">
+
       <p class="hint" id="running-detail"></p>
 
       <!-- Right under the title, because it is the first thing that has to
@@ -151,22 +154,29 @@
         <span class="version-note"></span>
       </p>
 
-      <label for="host-address">Start playing — in Minecraft: Multiplayer → Direct Connection</label>
+      <label for="host-address">Your address</label>
       <div class="invite-row">
         <input id="host-address" type="text" readonly />
         <button id="copy-host-address" class="btn btn-secondary">Copy</button>
       </div>
-      <p class="hint">You can hop in right away — no need to wait for your friends.</p>
+      <p class="hint">Minecraft → Multiplayer → Direct Connection. Hop in right away — no need to wait for anyone.</p>
 
-      <label for="invite">Invite your friends</label>
+      <label for="invite">Invite for your friends</label>
       <div class="invite-row">
         <input id="invite" type="text" readonly />
         <button id="copy" class="btn btn-secondary">Copy</button>
       </div>
-      <p class="hint">Send this to them however you like — they paste it into Craftparty's "Join a party" tab and appear in your world.</p>
+      <p class="hint">Send it however you like — they paste it into Craftparty's "Join a party" tab.</p>
 
-      <button id="stop" class="btn btn-danger">Stop the party</button>
-      <p class="hint">Stopping saves your world — it stays on this computer and you can start it again any time.</p>
+      </div><!-- /card-body -->
+
+      <!-- Pinned like every other card's action, and laid out as a row so
+           stopping the party never becomes a full-width green-button-sized
+           invitation to click it. -->
+      <div class="card-actions card-actions-row">
+        <button id="stop" class="btn btn-danger">Stop the party</button>
+        <p class="hint">Your world is saved either way — start it again any time.</p>
+      </div>
     </section>
 
     <!-- join: your parties + paste an invite -->
@@ -221,7 +231,46 @@
     </section>
   </main>
 
-  <footer class="ground"></footer>
+  <!--
+    Which build this is, and the one update action that makes sense right
+    now. It lives along the bottom edge because that is what it is worth:
+    true all the time, urgent almost never, and no reason to stand between
+    someone and the two buttons they came for.
+  -->
+  <footer class="footer">
+    <p id="update-note" class="update-note" hidden></p>
+    <div class="statusbar">
+      <span id="update-text" class="update-text">Craftparty</span>
+      <button id="update-action" class="update-btn" hidden></button>
+      <span class="statusbar-gap"></span>
+      <label id="update-auto-label" class="update-auto" hidden>
+        <input id="auto-update" type="checkbox" />
+        Update automatically
+      </label>
+    </div>
+    <div class="ground"></div>
+  </footer>
+
+  <!--
+    What the network chip is short for. The plain answer first, the
+    reasoning under it, and the raw findings folded away for whoever is
+    actually debugging a router. app.js writes all of it.
+  -->
+  <dialog id="net-dialog" class="modal">
+    <button id="net-dialog-x" class="modal-x" type="button" aria-label="Close">&times;</button>
+    <h2 id="net-dialog-title">Can your friends join over the internet?</h2>
+    <p id="net-dialog-verdict" class="modal-verdict"></p>
+    <div id="net-dialog-body" class="modal-body"></div>
+    <details class="modal-details">
+      <summary>What Craftparty checked</summary>
+      <dl id="net-dialog-facts" class="facts"></dl>
+      <p id="net-dialog-reasons" class="hint"></p>
+    </details>
+    <div class="modal-actions">
+      <button id="net-dialog-done" class="btn btn-secondary" type="button">Got it</button>
+    </div>
+  </dialog>
+
   <script src="app.js"></script>
 </body>
 </html>
