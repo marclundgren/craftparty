@@ -2,7 +2,7 @@
   "name": "@craftparty/host-app",
   "version": "0.9.0",
   "private": true,
-  "description": "Craftparty — host a private Minecraft world for your friends.",
+  "description": "Craftparty: host a private Minecraft world for your friends.",
   "main": "dist/main.cjs",
   "desktopName": "io.github.marclundgren.craftparty.desktop",
   "scripts": {
@@ -76,7 +76,7 @@
       "releaseType": "release"
     },
     "releaseInfo": {
-      "releaseName": "Craftparty 0.9.0 — a clearer window",
+      "releaseName": "Craftparty 0.9.0: a clearer window",
       "releaseNotesFile": "build/release-notes.md"
     }
   },

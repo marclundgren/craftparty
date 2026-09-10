@@ -17,7 +17,7 @@
 /*
  * An author `display` rule beats the UA stylesheet's [hidden] rule, so a
  * flex row with the hidden attribute would still show. Sections here are
- * shown and hidden by that attribute throughout — make it always win.
+ * shown and hidden by that attribute throughout, so make it always win.
  */
 [hidden] { display: none !important; }
 
@@ -29,7 +29,7 @@ html, body {
 body {
   display: flex;
   flex-direction: column;
-  /* The page itself never scrolls — every card is capped to the window and
+  /* The page itself never scrolls: every card is capped to the window and
      scrolls inside itself instead, which is what keeps each card's action
      button on screen. Without this a sub-pixel rounding difference is
      enough to put a scrollbar back on the whole window. */
@@ -40,10 +40,10 @@ body {
 }
 
 /*
- * Two rows of chrome and no more: who you are looking at and how to reach
- * the outside world, then the one choice the whole app is about. Anything
- * that is merely true — the version, the update state — waits at the
- * bottom of the window instead (see .statusbar).
+ * Two rows of chrome and no more: the two corner controls, then the one
+ * choice the whole app is about. Anything that is merely true (the
+ * version, the update state) waits at the bottom of the window instead,
+ * see .statusbar.
  */
 .topbar {
   display: flex;
@@ -53,36 +53,9 @@ body {
   padding: 0.85rem 1.2rem 0.7rem;
 }
 
-.logo {
-  font-weight: 800;
-  font-size: 1.15rem;
-  letter-spacing: 0.03em;
-  color: var(--ink);
-  text-decoration: none;
-  border-bottom: 2px solid transparent;
-  line-height: 1.2;
-}
-
-.logo:hover {
-  border-bottom-color: rgba(34, 50, 60, 0.35);
-}
-
-.logo:focus-visible {
-  outline: 3px solid var(--torch);
-  outline-offset: 3px;
-  border-radius: 2px;
-}
-
-.topbar-end {
-  display: flex;
-  align-items: center;
-  gap: 0.45rem;
-  min-width: 0;
-}
-
 /*
  * One shape for both corner controls. They sat at different weights
- * before — one a button, one a bare label — which read as two unrelated
+ * before, one a button and one a bare label, which read as two unrelated
  * things dropped in the same corner. Both are buttons; both look it.
  */
 .chip {
@@ -175,7 +148,7 @@ body {
 main {
   flex: 1;
   /* min-height:0 lets the card shrink to the window instead of pushing the
-     page taller — without it a tall card scrolls the whole window and takes
+     page taller. Without it a tall card scrolls the whole window and takes
      the primary button with it. */
   min-height: 0;
   display: flex;
@@ -224,7 +197,7 @@ textarea:focus {
  * The two long cards go further and split: heading and action button
  * pinned, only the middle scrolls. That is what keeps "Start my world"
  * reachable however many saved worlds are listed above it. The short
- * cards stay plain blocks — flex would stretch their buttons full-width.
+ * cards stay plain blocks, since flex would stretch their buttons wide.
  */
 .card-split {
   overflow: hidden;
@@ -245,7 +218,7 @@ textarea:focus {
   /*
    * Scroll shadows: the two `local` gradients paint the paper colour over
    * the cover at each end, so the `scroll` shadows behind them only show
-   * when there is actually more content that way. Pure CSS — it needs no
+   * when there is actually more content that way. Pure CSS: it needs no
    * scroll listener and can never disagree with the real scroll position.
    */
   background:
@@ -273,7 +246,7 @@ textarea:focus {
 .card-actions-row .hint { margin: 0; }
 
 /* The first control in a scrolling body shouldn't start with a label's
-   top margin — it reads as a gap under the heading. */
+   top margin, which reads as a gap under the heading. */
 .card-body > *:first-child,
 .card-body > *:first-child > .list-head > label { margin-top: 0; }
 
@@ -510,8 +483,8 @@ select:focus {
 /* ---- Minecraft version ---- */
 /*
  * Which Minecraft this world speaks. It appears wherever someone is about
- * to launch a client — making a world, running one, looking at a friend's
- * — and reads the same in all three places, so the number is recognised
+ * to launch a client (making a world, running one, looking at a friend's)
+ * and reads the same in all three places, so the number is recognised
  * rather than re-read. The tag carries the version alone; the note beside
  * it says what that means here.
  */
@@ -527,7 +500,7 @@ select:focus {
 
 /*
  * Sized to sit on the text line beside it, not to float above it. The
- * baselines line up either way — flex baseline alignment sees to that —
+ * baselines line up either way, flex baseline alignment sees to that,
  * but a box with room to spare above and below the digits overhangs the
  * note's first line and reads as a tag that missed its line.
  */
@@ -543,7 +516,7 @@ select:focus {
   padding: 0 0.35rem;
 }
 
-/* Nothing to show yet, or nothing we could check — the note stands alone. */
+/* Nothing to show yet, or nothing we could check: the note stands alone. */
 .version-note {
   flex: 1;
   min-width: 12rem;
@@ -553,7 +526,7 @@ select:focus {
 /* ---- saved worlds picker ---- */
 /*
  * Deliberately not scrollable. A card already has exactly one scrolling
- * region — its body — and a second one nested inside it is miserable to
+ * region, its body, and a second one nested inside it is miserable to
  * use: the wheel fights over which list it belongs to. A long list is
  * bounded by paging it instead, which costs no scrollbar at all.
  */
@@ -574,7 +547,7 @@ select:focus {
 /*
  * A row's own buttons are quiet until you go for them. Folder and Delete
  * repeat on every row, and drawn as fully outlined buttons they made a
- * list of worlds read as a list of things to delete — while eating the
+ * list of worlds read as a list of things to delete, while eating the
  * width the name and its details need to stay on one line.
  */
 .world-actions .world-btn {
@@ -688,7 +661,7 @@ select:focus {
 /*
  * Which build this is and what the updater is doing. It used to sit
  * between the tabs and the card, where it was the third thing anyone read
- * on the way to a button — and where a routine "up to date" outweighed
+ * on the way to a button, and where a routine "up to date" outweighed
  * the two choices the app exists for. Along the bottom edge it is still
  * always legible and never in the way.
  */
@@ -874,7 +847,7 @@ select:focus {
 /*
  * One modal shape for the whole app: a card, on the same paper, over a
  * dimmed sky. It answers a question the user asked by clicking something,
- * so it closes every way anyone might try — the ✕, the button, Escape,
+ * so it closes every way anyone might try: the ✕, the button, Escape,
  * or the dimmed area around it.
  */
 .modal {

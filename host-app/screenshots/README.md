@@ -18,8 +18,8 @@ npm run screenshots
 
 `capture.cjs` serves the real `../renderer` over http and swaps in
 `mock-bridge.js` for the preload bridge, so the renderer draws a party
-that isn't running. Electron then loads each scene offscreen — nothing
-appears on your desktop — and writes the captured page to a PNG.
+that isn't running. Electron then loads each scene offscreen, so nothing
+appears on your desktop, and writes the captured page to a PNG.
 
 Scenes are chosen with the query string the mock understands:
 `?s=running|join`, `?net=independent|independent-maybe|assisted|error`,
@@ -27,5 +27,5 @@ Scenes are chosen with the query string the mock understands:
 capture another one.
 
 The stub is only ever loaded by this script. Nothing here is bundled into
-the shipped app — `package.json`'s `build.files` lists `renderer/**`, not
+the shipped app: `package.json`'s `build.files` lists `renderer/**`, not
 this directory.

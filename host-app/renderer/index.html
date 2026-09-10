@@ -7,40 +7,39 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <!--
+    No wordmark here on purpose. The window's own title bar already says
+    Craftparty, directly above and centred; saying it again below and to
+    the left was the app introducing itself to someone who had just read
+    its name.
+  -->
   <header class="topbar">
-    <!-- A real link: the main process routes it to the system browser
-         (see setWindowOpenHandler in main.ts), so hovering shows where it
-         goes and nothing opens inside the app. -->
-    <a class="logo" href="https://craftparty-ten.vercel.app/"
-       target="_blank" rel="noreferrer">Craftparty</a>
-    <span class="topbar-end">
-      <!-- The verdict is one chip's worth of answer; the reasoning behind
-           it — and what "probably" is hedging against — lives in the
-           dialog it opens rather than in the corner of every screen. -->
-      <button id="net-status" class="chip chip-net" type="button"
-              aria-haspopup="dialog" title="What does this mean?">
-        <span id="net-dot" class="chip-dot checking" aria-hidden="true"></span>
-        <span id="net-status-text">Checking your network…</span>
-      </button>
-      <!-- Deliberately small and always in the same place: available from
-           anywhere in the app, never in the way of hosting or joining, and
-           never shown at a moment the app has just made someone happy. -->
-      <button id="sponsor" class="chip chip-sponsor" type="button"
-              title="Support Craftparty on GitHub Sponsors">
-        <span class="sponsor-heart" aria-hidden="true">&#9829;</span> Sponsor
-      </button>
-    </span>
+    <!-- Deliberately small and always in the same place: available from
+         anywhere in the app, never in the way of hosting or joining, and
+         never shown at a moment the app has just made someone happy. -->
+    <button id="sponsor" class="chip chip-sponsor" type="button"
+            title="Support Craftparty on GitHub Sponsors">
+      <span class="sponsor-heart" aria-hidden="true">&#9829;</span> Sponsor
+    </button>
+    <!-- The verdict is one chip's worth of answer; the reasoning behind
+         it, and what "probably" is hedging against, lives in the dialog
+         it opens rather than in the corner of every screen. -->
+    <button id="net-status" class="chip chip-net" type="button"
+            aria-haspopup="dialog" title="What does this mean?">
+      <span id="net-dot" class="chip-dot checking" aria-hidden="true"></span>
+      <span id="net-status-text">Checking your network…</span>
+    </button>
   </header>
 
   <nav class="tabs">
-    <button id="tab-host" class="tab active">Host a party</button>
-    <button id="tab-join" class="tab">Join a party</button>
+    <button id="tab-host" class="tab active">Host a craftparty</button>
+    <button id="tab-join" class="tab">Join a craftparty</button>
   </nav>
 
   <main>
     <!-- setup -->
     <section id="setup" class="card card-split">
-      <h1>Host a party</h1>
+      <h1>Host a craftparty</h1>
       <div class="card-body">
 
       <div id="worlds-box" hidden>
@@ -77,11 +76,11 @@
              "hardcore" is a UI-only shorthand: app.js translates it into
              difficulty "hard" plus hardcore true before sending the config. -->
         <select id="difficulty">
-          <option value="peaceful">Peaceful — no monsters</option>
+          <option value="peaceful">Peaceful (no monsters)</option>
           <option value="easy" selected>Easy</option>
           <option value="normal">Normal</option>
           <option value="hard">Hard</option>
-          <option value="hardcore">Hardcore — the world locks forever when you die</option>
+          <option value="hardcore">Hardcore (the world locks forever when you die)</option>
         </select>
 
         <label for="seed">Seed</label>
@@ -113,7 +112,7 @@
         <summary>Addons <span id="addons-summary" class="hint-inline"></span></summary>
         <div id="addons-list"></div>
         <p class="hint">
-          Addons run in your world — friends don't install anything.
+          Addons run in your world, so friends don't install anything.
           <a href="#" id="marketplace-link">Browse the marketplace ↗</a>
         </p>
       </details>
@@ -136,7 +135,7 @@
     <section id="progress" class="card" hidden>
       <h1 id="phase">Getting things ready…</h1>
       <div class="loader"><div class="loader-fill"></div></div>
-      <p class="hint">First time takes a few minutes — Craftparty is downloading everything your world needs.</p>
+      <p class="hint">First time takes a few minutes. Craftparty is downloading everything your world needs.</p>
     </section>
 
     <!-- running -->
@@ -147,7 +146,7 @@
       <p class="hint" id="running-detail"></p>
 
       <!-- Right under the title, because it is the first thing that has to
-           be true for anyone — host or friend — to get in: the wrong
+           be true for anyone, host or friend, to get in: the wrong
            client version is refused at the door. -->
       <p id="running-version" class="version-line" hidden>
         <span class="version-tag"></span>
@@ -159,14 +158,14 @@
         <input id="host-address" type="text" readonly />
         <button id="copy-host-address" class="btn btn-secondary">Copy</button>
       </div>
-      <p class="hint">Minecraft → Multiplayer → Direct Connection. Hop in right away — no need to wait for anyone.</p>
+      <p class="hint">Minecraft → Multiplayer → Direct Connection.</p>
 
       <label for="invite">Invite for your friends</label>
       <div class="invite-row">
         <input id="invite" type="text" readonly />
         <button id="copy" class="btn btn-secondary">Copy</button>
       </div>
-      <p class="hint">Send it however you like — they paste it into Craftparty's "Join a party" tab.</p>
+      <p class="hint">Send it however you like. They paste it into Craftparty's "Join a craftparty" tab.</p>
 
       </div><!-- /card-body -->
 
@@ -175,13 +174,13 @@
            invitation to click it. -->
       <div class="card-actions card-actions-row">
         <button id="stop" class="btn btn-danger">Stop the party</button>
-        <p class="hint">Your world is saved either way — start it again any time.</p>
+        <p class="hint">Your world is saved either way. Start it again any time.</p>
       </div>
     </section>
 
     <!-- join: your parties + paste an invite -->
     <section id="join-setup" class="card card-split" hidden>
-      <h1>Join a party</h1>
+      <h1>Join a craftparty</h1>
       <div class="card-body">
 
       <div id="parties-box" hidden>
@@ -227,7 +226,7 @@
     <section id="join-progress" class="card" hidden>
       <h1 id="join-phase">Connecting…</h1>
       <div class="loader"><div class="loader-fill"></div></div>
-      <p class="hint">Hang tight — connecting you to your friend's world.</p>
+      <p class="hint">Hang tight, connecting you to your friend's world.</p>
     </section>
   </main>
 

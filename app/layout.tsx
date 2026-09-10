@@ -21,10 +21,10 @@ export const metadata: Metadata = {
   // Lets the opengraph-image file convention resolve to an absolute URL,
   // which is the only kind a link preview can fetch.
   metadataBase: new URL("https://craftparty-ten.vercel.app"),
-  title: "Craftparty — host a private Minecraft world for your friends",
+  title: "Craftparty: host a private Minecraft world for your friends",
   description: DESCRIPTION,
   openGraph: {
-    title: "Craftparty — host a private Minecraft world for your friends",
+    title: "Craftparty: host a private Minecraft world for your friends",
     description: DESCRIPTION,
     siteName: "Craftparty",
     url: "/",

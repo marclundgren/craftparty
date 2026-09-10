@@ -27,7 +27,7 @@ const worldsEmpty = $("worlds-empty");
 const newWorldVersion = $("new-world-version");
 
 /**
- * Rows per page. A card has exactly one scrolling region — its body — so
+ * Rows per page. A card has exactly one scrolling region, its body, so
  * the lists inside it must stay short enough not to bury what follows
  * them; paging is how that happens without nesting a second scrollbar.
  * Party rows carry a status line and an address, so fewer of them fit.
@@ -73,15 +73,15 @@ const rememberSection = (section) => {
  * launch a client: making a world, running one, looking at a friend's.
  *
  * A new world is made on the newest version Craftparty can actually host
- * — the newest Fabric has published a server for, which trails a
- * Minecraft release by a few days — and keeps it for good. So a saved
+ * (the newest Fabric has published a server for, which trails a
+ * Minecraft release by a few days) and keeps it for good. So a saved
  * world shows its own version, never today's.
  */
 
 /** The newest hostable version, once the main process has looked it up. */
 let latestVersion = null;
 
-/** What to say when there is no number to show — before, and if the check fails. */
+/** What to say when there is no number to show: before, and if the check fails. */
 let versionUnknownNote = "Checking which version your world can run…";
 
 /**
@@ -103,8 +103,8 @@ function paintVersion(line, version, note) {
 
 /**
  * The version the start button would really run. Typing the name of a
- * world that already exists continues that world — on the version it was
- * made with, not on the newest one — and the line has to say so rather
+ * world that already exists continues that world, on the version it was
+ * made with rather than the newest one, and the line has to say so rather
  * than promising a number the start won't use.
  */
 function renderNewWorldVersion(existing) {
@@ -113,7 +113,7 @@ function renderNewWorldVersion(existing) {
       newWorldVersion,
       existing.minecraftVersion,
       existing.minecraftVersion
-        ? `“${existing.name}” runs this version — continuing it keeps it there.`
+        ? `“${existing.name}” runs this version, and continuing it keeps it there.`
         : `“${existing.name}” hasn't run yet; its version is settled the first time it does.`,
     );
   } else if (latestVersion) {
@@ -132,7 +132,7 @@ function renderNewWorldVersion(existing) {
   if (result.version) {
     latestVersion = result.version;
   } else {
-    // Not fatal — starting resolves the version for real. Say what's
+    // Not fatal: starting resolves the version for real. Say what's
     // true instead of showing a number nobody checked.
     versionUnknownNote =
       "Couldn't check the latest Minecraft version. Starting a world uses the newest one available.";
@@ -143,7 +143,7 @@ function renderNewWorldVersion(existing) {
 // ---- worlds ----
 // Worlds outlive parties: stopping a party (or quitting) leaves the world
 // on disk. The host picks a saved world to continue, starts a new one, or
-// deletes one for good — nothing here happens implicitly.
+// deletes one for good. Nothing here happens implicitly.
 let worlds = [];
 /** Selected saved world, or null for "start a new world". */
 let chosenWorldId = null;
@@ -330,7 +330,7 @@ function refreshChoice() {
   const collision = chosen ? null : worldWithName(worldName.value);
   worldNameHint.hidden = !collision;
   if (collision) {
-    worldNameHint.textContent = `You already have a world called "${collision.name}" — starting will continue that world.`;
+    worldNameHint.textContent = `You already have a world called "${collision.name}". Starting will continue that world.`;
   }
 
   // Highlight whatever the start button is actually about to do, so a
@@ -449,7 +449,7 @@ function renderUpdate(state) {
     updateAction.disabled = false;
     updateAction.onclick = action[1];
   }
-  // The note explains the unusual cases — a platform that can't
+  // The note explains the unusual cases: a platform that can't
   // self-install, or why a check failed. Nothing to say most of the time.
   const note =
     state.status === "error" ||
@@ -534,7 +534,7 @@ function showReport(prefix, result) {
   }
   $(`${prefix}-report-note`).textContent = result.reportSent
     ? "The error details were sent to the developer automatically."
-    : "The details couldn't be sent automatically — please copy and share them.";
+    : "The details couldn't be sent automatically. Please copy and share them.";
   const btn = $(`${prefix}-copy-report`);
   btn.onclick = async () => {
     await craftparty.copy(result.report);
@@ -547,7 +547,7 @@ function showReport(prefix, result) {
 // ---- network verdict ----
 /*
  * The chip in the corner is one line of answer; the dialog behind it is
- * the reasoning, and — for the "probably" that most people see — what
+ * the reasoning, and for the "probably" that most people see, what
  * exactly is still untested.
  *
  * The check itself is preflight/src/probe.ts. It asks the router whether
@@ -594,11 +594,11 @@ function netCopy(report) {
       chip: "Network check didn't finish",
       dot: "offline",
       tone: "bad",
-      hint: "We couldn't check your network. Internet hosting may not work — you can still try.",
+      hint: "We couldn't check your network. Internet hosting may not work, but you can still try.",
       verdict: "Craftparty couldn't tell.",
       body: [
         [null, "The check has to reach the internet and talk to your router, and one of the two didn't answer."],
-        ["What to do", "Start a party anyway. The check being unavailable doesn't mean hosting is — it only means Craftparty has nothing to promise you in advance."],
+        ["What to do", "Start a party anyway. The check being unavailable doesn't mean hosting is. It only means Craftparty has nothing to promise you in advance."],
       ],
     };
   }
@@ -609,8 +609,8 @@ function netCopy(report) {
       dot: "offline",
       tone: "bad",
       hint:
-        "Your internet provider doesn't allow direct hosting. Assisted mode (via the Craftparty relay) is coming soon — for now, parties are limited to your home network.",
-      verdict: "Not from this network — but your world still works.",
+        "Your internet provider doesn't allow direct hosting. Assisted mode (via the Craftparty relay) is coming soon. For now, parties are limited to your home network.",
+      verdict: "Not from this network, but your world still works.",
       body: [
         [null, assistedCause(report)],
         [
@@ -626,8 +626,8 @@ function netCopy(report) {
       chip: "Internet hosting: ready",
       dot: "connected",
       tone: "good",
-      hint: "Your network supports hosting — friends anywhere can join.",
-      verdict: "Yes — your network is set up for it.",
+      hint: "Your network supports hosting, so friends anywhere can join.",
+      verdict: "Yes, your network is set up for it.",
       body: [
         [
           null,
@@ -649,7 +649,7 @@ function netCopy(report) {
     tone: "maybe",
     hint:
       "Your network looks compatible, but we couldn't fully verify it. If friends can't join, uncheck this and party on your home network.",
-    verdict: "Probably — everything Craftparty can check looks right.",
+    verdict: "Probably. Everything Craftparty can check looks right.",
     body: [
       [
         "What's confirmed",
@@ -658,7 +658,7 @@ function netCopy(report) {
       ["Why only “probably”", maybeDoubt(report)],
       [
         "What to do",
-        "Start your party and send the invite — this usually just works. If a friend can't get in, come back here, uncheck “Friends join over the internet”, and play on your home network instead.",
+        "Start your party and send the invite. This usually just works. If a friend can't get in, come back here, uncheck “Friends join over the internet”, and play on your home network instead.",
       ],
     ],
   };
@@ -670,10 +670,10 @@ function assistedCause(report) {
     return "Your internet provider gives your home an address it shares with many other customers, so there is no door it could open for you alone. Nothing here can accept a connection from outside.";
   }
   if (!report.upnp?.found) {
-    return "No router on this network answered Craftparty's request to open a door for Minecraft. That usually means UPnP is switched off in the router's settings — turning it on, or forwarding port 25565 to this computer by hand, would give friends a way in.";
+    return "No router on this network answered Craftparty's request to open a door for Minecraft. That usually means UPnP is switched off in the router's settings. Turning it on, or forwarding port 25565 to this computer by hand, would give friends a way in.";
   }
   if (report.upnp.externalIpKind && report.upnp.externalIpKind !== "public") {
-    return "Your router will open a door, but it opens onto another network rather than the internet — there is a second router, or your provider's own equipment, sitting above it. A port opened on the router you can see doesn't reach anybody.";
+    return "Your router will open a door, but it opens onto another network rather than the internet: there is a second router, or your provider's own equipment, sitting above it. A port opened on the router you can see doesn't reach anybody.";
   }
   return "Something on the path between this computer and the internet won't let a connection in from outside.";
 }
@@ -681,14 +681,14 @@ function assistedCause(report) {
 /**
  * The honest content of the hedge. Usually it is the untested last step;
  * where the probe actually saw a second layer of network, say that
- * instead — it is a specific thing to go and look at.
+ * instead, because it is a specific thing to go and look at.
  */
 function maybeDoubt(report) {
   const routerIp = report.upnp?.externalIp;
   if (routerIp && report.publicIp && routerIp !== report.publicIp) {
-    return `Your router thinks its address is ${routerIp}, but the internet sees this computer as ${report.publicIp}. A gap like that usually means a second router — or your provider's own equipment — sits above yours, and a door opened here may only open onto that middle network.`;
+    return `Your router thinks its address is ${routerIp}, but the internet sees this computer as ${report.publicIp}. A gap like that usually means a second router, or your provider's own equipment, sits above yours, and a door opened here may only open onto that middle network.`;
   }
-  return "The only real proof is someone out on the internet knocking on that door. Craftparty has no server out there to knock, and most routers won't let this computer knock on its own address from inside the house — so the last step goes untested.";
+  return "The only real proof is someone out on the internet knocking on that door. Craftparty has no server out there to knock, and most routers won't let this computer knock on its own address from inside the house, so the last step goes untested.";
 }
 
 /** The chip, plus the two controls the verdict actually governs. */
@@ -719,7 +719,7 @@ function renderNetDialog() {
     }),
   );
 
-  // The findings themselves, folded away — of no use to most people and
+  // The findings themselves, folded away: of no use to most people and
   // the first thing anyone debugging a router will want.
   const facts = $("net-dialog-facts");
   facts.replaceChildren(...netFacts(netReport).flatMap(([term, code, note]) => {
@@ -746,7 +746,7 @@ function netFacts(report) {
   }
   const address = (label, ip, kind) =>
     ip
-      ? [label, ip, kind ? `— ${IP_KIND_NOTE[kind] ?? kind}` : ""]
+      ? [label, ip, kind ? `(${IP_KIND_NOTE[kind] ?? kind})` : ""]
       : [label, null, "couldn't tell"];
 
   const facts = [
@@ -774,7 +774,7 @@ function netFacts(report) {
         ? report.mappingTest.loopbackReached === true
           ? "opened, and a connection came back through it"
           : "opened, but the knock-back test was inconclusive"
-        : `couldn't be opened — ${report.mappingTest.error ?? "unknown error"}`,
+        : `couldn't be opened: ${report.mappingTest.error ?? "unknown error"}`,
     ]);
   }
   return facts;
@@ -802,8 +802,8 @@ paintNetwork();
     remote.disabled = true;
   }
   paintNetwork();
-  // The dialog can already be open — someone can ask the question before
-  // the answer arrives — so keep whatever is on screen current.
+  // The dialog can already be open, since someone can ask the question
+  // before the answer arrives, so keep whatever is on screen current.
   if (netDialog.open) renderNetDialog();
 })();
 
@@ -827,7 +827,7 @@ paintNetwork();
     );
     const tag = document.createElement("span");
     tag.className = "addon-tag";
-    tag.textContent = `— ${addon.tagline}`;
+    tag.textContent = `· ${addon.tagline}`;
     label.append(tag);
     list.append(label);
   }
@@ -870,7 +870,7 @@ startBtn.addEventListener("click", async () => {
   setupError.hidden = true;
   $("setup-report").hidden = true;
   // Continue a saved world (picked from the list, or matched by name), or
-  // create a fresh one. Never both — the main process resumes only when
+  // create a fresh one. Never both: the main process resumes only when
   // it is handed an id.
   const resume = chosenWorldId ?? worldWithName(worldName.value)?.id ?? null;
   rememberSection(progress);
@@ -881,7 +881,7 @@ startBtn.addEventListener("click", async () => {
     remote: remote.checked,
     addonIds: selectedAddonIds(),
     // Only read on a brand-new world. The values must be ones
-    // host-engine/src/world-config.ts lists — it rejects anything else
+    // host-engine/src/world-config.ts lists. It rejects anything else
     // rather than quietly starting a world nobody asked for. "hardcore"
     // is a UI-only option, not one of those values, so it's translated
     // here into the difficulty/hardcore pair the engine expects.
@@ -912,7 +912,7 @@ startBtn.addEventListener("click", async () => {
     paintVersion(
       $("running-version"),
       result.minecraftVersion,
-      "Launch this Minecraft version to play — friends too.",
+      "Launch this Minecraft version to play. Friends too.",
     );
   }
   rememberSection(running);
@@ -932,7 +932,7 @@ $("copy-host-address").addEventListener("click", async () => {
 });
 
 // ---- stop ----
-// Stopping keeps the world — come back to the picker with it selected,
+// Stopping keeps the world. Come back to the picker with it selected,
 // so continuing where you left off is the obvious next click.
 $("stop").addEventListener("click", async () => {
   $("stop").disabled = true;
@@ -944,8 +944,8 @@ $("stop").addEventListener("click", async () => {
 });
 
 // ---- join flow ----
-// The join tab is the list of every party this computer has joined —
-// connected or not — plus the box for pasting a new invite. Connections
+// The join tab is the list of every party this computer has joined,
+// connected or not, plus the box for pasting a new invite. Connections
 // are held by the main process, so this only ever draws what it is told
 // and asks for a fresh status when it wants one.
 const partiesBox = $("parties-box");
@@ -1095,7 +1095,7 @@ function partyRow(party) {
  * lives, when you were last in it.
  *
  * The version comes from the invite, so it is there whether or not the
- * host is up — a friend can see what client they'll need before anyone
+ * host is up, so a friend can see what client they'll need before anyone
  * starts anything. A live ping overrides it: that is the version the
  * server is really speaking right now.
  */
@@ -1143,8 +1143,8 @@ function statusClass(party, status) {
 /**
  * What a friend can actually rely on. Connected, the numbers come from a
  * real ping to the host's Minecraft. Not connected, all Craftparty can
- * reach is the host's control plane — which runs only while the party
- * does — so it promises no more than "the host is up".
+ * reach is the host's control plane, which runs only while the party
+ * does, so it promises no more than "the host is up".
  *
  * The Minecraft version is deliberately not here: it is known from the
  * invite either way, and belongs on the line that stays put (partySub)
@@ -1165,9 +1165,9 @@ function statusLine(party, status) {
   }
   if (status.state === "online") {
     const ping = status.pingMs === null ? "" : ` · ${status.pingMs} ms`;
-    return `The host is up — ready to join${ping}`;
+    return `The host is up and ready to join${ping}`;
   }
-  return "Offline — the host isn't running this world right now";
+  return "Offline. The host isn't running this world right now";
 }
 
 function lastJoined(party) {
@@ -1209,7 +1209,7 @@ async function forgetSaved(party, btn) {
 /**
  * One connection attempt, from either the paste box or a saved row. Both
  * show the progress screen and end back at the list, which is where the
- * result — connected, or a party that is saved but offline — shows up.
+ * result, connected or saved-but-offline, shows up.
  */
 async function connect(attempt) {
   joinError.hidden = true;
@@ -1247,7 +1247,7 @@ $("parties-refresh").addEventListener("click", async (event) => {
 });
 
 // Opening the tab is a fresh question, and an open tab re-asks on its
-// own — a host stopping their world should show up without a click.
+// own: a host stopping their world should show up without a click.
 $("tab-join").addEventListener("click", () => void checkAllParties());
 setInterval(() => {
   if (!joinSetup.hidden) void checkAllParties();

@@ -21,7 +21,7 @@ const PORT = 4317;
 
 /**
  * Each picture the site uses. `zoom` renders the same layout at a higher
- * pixel density — the hero image is displayed wider than it is captured,
+ * pixel density. The hero image is displayed wider than it is captured,
  * so at 1x it would be visibly soft.
  */
 const SHOTS = [
@@ -48,7 +48,7 @@ const TYPES = { ".html": "text/html", ".js": "text/javascript", ".css": "text/cs
 /**
  * Serves the renderer over http rather than file://, and injects the stub
  * bridge ahead of app.js. The page's own CSP allows neither, so it is
- * dropped for the capture — nothing here is ever shipped.
+ * dropped for the capture. Nothing here is ever shipped.
  */
 function serve() {
   return new Promise((resolve) => {
@@ -116,7 +116,7 @@ app.whenReady().then(async () => {
     // Zoom is remembered per origin across a session, so the second shot
     // would otherwise inherit the first one's. Set it after every load.
     win.webContents.setZoomFactor(shot.zoom);
-    // The renderer settles asynchronously — the version lookup, the world
+    // The renderer settles asynchronously: the version lookup, the world
     // list and the preflight verdict all land after first paint.
     await new Promise((r) => setTimeout(r, 2500));
     const image = await win.webContents.capturePage();

@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 /*
-  Craftparty design tokens — "the page is a world":
+  Craftparty design tokens, "the page is a world":
   sky (hero) → grass surface (content) → underground (footer).
 */
 :root {
@@ -185,7 +185,7 @@ a {
 /* Second Linux format. The .deb is the button; this is the escape hatch
    for distros that can't take one, so it reads as a link, not a rival.
    It renders between the two call-to-action buttons, so `order` sends it
-   past them and a full-width basis drops it onto its own line — without
+   past them and a full-width basis drops it onto its own line. Without
    it, the escape hatch elbows "I got an invite" onto a row of its own. */
 .alt-download {
   order: 1;
@@ -240,7 +240,7 @@ a {
   box-shadow: 0 2px 0 #b3a68e;
 }
 
-/* Sponsoring gets the heart colour rather than the grass of "Download" —
+/* Sponsoring gets the heart colour rather than the grass of "Download":
    it is a different kind of action and shouldn't compete with the one
    the page is really for. */
 .btn-sponsor {

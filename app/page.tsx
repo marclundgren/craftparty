@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import DownloadButton, { RELEASES_URL } from "./download-button";
-// A real capture of the app, taken through Electron itself — see the
+// A real capture of the app, taken through Electron itself. See the
 // capture script in the repo's tooling. Statically imported so Next knows
 // its dimensions and the hero never shifts while it loads.
 import appShot from "./craftparty-app.png";
@@ -41,7 +41,7 @@ export default function Home() {
               </h1>
               <p className="lede">
                 Craftparty turns your computer into a private Minecraft server.
-                One download — no public servers, no port forwarding, no tech
+                One download, no public servers, no port forwarding, no tech
                 skills needed. Your world stays on your machine, and only people
                 you invite can get in.
               </p>
@@ -56,7 +56,7 @@ export default function Home() {
                 own Minecraft Java Edition
               </p>
             </div>
-            {/* The whole app, actual size — a download page should show
+            {/* The whole app, actual size. A download page should show
                 what you are downloading. */}
             <div className="hero-shot">
               <Image
@@ -86,7 +86,7 @@ export default function Home() {
               <h3>Download Craftparty</h3>
               <p>
                 Get the app for Windows, Mac, or Linux. It sets up everything it needs
-                on its own — nothing else to install, nothing to configure.
+                on its own, with nothing else to install and nothing to configure.
               </p>
             </div>
             <div className="card">
@@ -111,7 +111,7 @@ export default function Home() {
           <div className="download-block">
             <DownloadButton />
             <p className="fineprint" style={{ margin: 0 }}>
-              Early beta — things may still be rough around the edges.
+              Early beta. Things may still be rough around the edges.
             </p>
           </div>
         </div>
@@ -125,7 +125,7 @@ export default function Home() {
           <p className="intro">
             Someone sent you an invite code? You&apos;re two minutes from
             their world. Download Craftparty, open the{" "}
-            <strong>Join a party</strong> tab, and paste the code — it
+            <strong>Join a craftparty</strong> tab, and paste the code. It
             connects you automatically, no server address to type, no
             settings to touch. Then open Minecraft and connect to the local
             address it shows you.
@@ -140,7 +140,7 @@ export default function Home() {
           <h2>Two ways to connect</h2>
           <p className="intro">
             Some home internet providers quietly block hosting anything. So
-            Craftparty comes with two connection modes — the app tests your
+            Craftparty comes with two connection modes. The app tests your
             network and recommends one, and you can switch anytime.
           </p>
           <div className="cards">
@@ -158,13 +158,13 @@ export default function Home() {
               <h3>Our relay lends a hand</h3>
               <p>
                 If your provider blocks hosting, the Craftparty relay helps
-                your friends find you. It only coordinates the connection —
+                your friends find you. It only coordinates the connection:
                 your world and everything in it still lives on your machine.
               </p>
             </div>
           </div>
           <p className="mode-note">
-            Either way, gameplay runs between you and your friends — the world
+            Either way, gameplay runs between you and your friends. The world
             is yours, the saves are yours, and turning it off is as simple as
             closing the app.
           </p>
@@ -184,7 +184,7 @@ export default function Home() {
           <p className="intro">
             Your world isn&apos;t listed anywhere and has no public address to
             find. Friends connect through a private, encrypted network that
-            only your invites can join — to the rest of the internet, your
+            only your invites can join. To the rest of the internet, your
             party doesn&apos;t exist.
           </p>
         </div>
@@ -199,7 +199,7 @@ export default function Home() {
             <details>
               <summary>Is it really free?</summary>
               <p>
-                Yes — Craftparty is free and open source, and there is no paid
+                Yes. Craftparty is free and open source, and there is no paid
                 tier. Everyone still needs their own copy of Minecraft Java
                 Edition to play. If you want to chip in anyway, you can{" "}
                 <a href="#sponsor">sponsor the project</a>.
@@ -215,7 +215,7 @@ export default function Home() {
             <details>
               <summary>Does my computer need to stay on?</summary>
               <p>
-                While people are playing, yes — the world runs on your
+                While people are playing, yes: the world runs on your
                 machine. Close the app and the party pauses until next time;
                 your world is saved locally.
               </p>
@@ -223,7 +223,7 @@ export default function Home() {
             <details>
               <summary>Can we use mods?</summary>
               <p>
-                Yes — the <Link href="/marketplace">Craftparty Marketplace</Link>{" "}
+                Yes. The <Link href="/marketplace">Craftparty Marketplace</Link>{" "}
                 has free addons you can tick on when starting your world.
                 They run on the host&apos;s side, so friends join with
                 completely vanilla Minecraft. Power users can also drop any
@@ -253,7 +253,7 @@ export default function Home() {
           <h2>Keep the party going</h2>
           <p className="intro">
             Craftparty is free and open source, and it stays that way.
-            Sponsoring pays for the things that do cost money — the relay
+            Sponsoring pays for the things that do cost money: the relay
             that helps friends connect when a home internet provider blocks
             hosting, and the time to keep the app working as Minecraft
             changes.
@@ -269,7 +269,7 @@ export default function Home() {
             </a>
           </div>
           <p className="fineprint">
-            Monthly or one-off, any amount, cancel whenever — handled entirely
+            Monthly or one-off, any amount, cancel whenever, handled entirely
             by GitHub Sponsors.
           </p>
         </div>

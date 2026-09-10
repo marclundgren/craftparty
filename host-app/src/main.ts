@@ -54,8 +54,8 @@ let starting = false;
 
 /**
  * Every party this computer is currently connected to, by party id.
- * Friends can be in several worlds at once — each connection is its own
- * tailscaled and its own loopback proxy — so this is a map, not a slot.
+ * Friends can be in several worlds at once, each connection its own
+ * tailscaled and its own loopback proxy, so this is a map, not a slot.
  * The saved list of parties (including the ones nobody is connected to)
  * lives on disk in host-engine/src/parties.ts.
  */
@@ -79,7 +79,7 @@ if (selftestRole) {
 /**
  * Packaged builds get their icon from the bundle that electron-builder
  * makes out of build/icon.png. A dev run has no bundle, so point Electron
- * at the same source file — otherwise `npm start` shows the stock Electron
+ * at the same source file. Otherwise `npm start` shows the stock Electron
  * icon and the package name in the dock.
  */
 const devIcon = (): string | undefined => {
@@ -92,7 +92,7 @@ function createWindow() {
   win = new BrowserWindow({
     width: 760,
     // Tall enough that a card with a few saved worlds needs no scrolling at
-    // all. Past that the card scrolls inside itself — the action button is
+    // all. Past that the card scrolls inside itself. The action button is
     // pinned either way (see .card-split in the stylesheet), so the minimum
     // only has to leave the scrolling middle something to show.
     height: 720,
@@ -112,7 +112,7 @@ function createWindow() {
 
   // Every link out of Craftparty belongs in the real browser. Left to
   // itself Electron answers target="_blank" with a chromeless window of
-  // its own — no address bar, no back button, no way out of it — and
+  // its own, with no address bar, no back button and no way out of it, and
   // follows a plain href by replacing the app with the page.
   win.webContents.setWindowOpenHandler(({ url }) => {
     openInBrowser(url);
@@ -169,7 +169,7 @@ async function fetchAddons(): Promise<RegistryAddon[]> {
  * Failed starts produce a diagnostic report: saved locally, posted to the
  * report endpoint (fire-and-forget), and returned to the renderer so the
  * user can copy it. Contains app/OS versions, the phase reached, the
- * error, and recent engine logs — no account data.
+ * error, and recent engine logs. No account data.
  */
 async function reportFailure(
   kind: "host" | "join",
@@ -248,7 +248,7 @@ ipcMain.handle("get-addons", async () => {
 /**
  * Which Minecraft a new world would be created on: the newest release
  * Fabric can serve today (see host-engine/src/versions.ts), not the
- * newest Mojang has shipped — those differ for a few days after every
+ * newest Mojang has shipped. Those differ for a few days after every
  * Minecraft release, and only the first can actually be started.
  *
  * An error here is not a failure worth blocking on: the form says it
@@ -275,18 +275,18 @@ ipcMain.handle("open-releases", () => {
 });
 
 // Installing restarts the app, which would drop everyone out of a running
-// world mid-block. Refuse while anything is live and say why — an update
+// world mid-block. Refuse while anything is live and say why: an update
 // that is already downloaded loses nothing by waiting for the next quit.
 ipcMain.handle("install-update", () => {
   if (party) {
-    return { error: "Stop the party first — installing restarts Craftparty." };
+    return { error: "Stop the party first. Installing restarts Craftparty." };
   }
   if (joins.size > 0) {
     return {
       error:
         joins.size === 1
-          ? "Leave the party first — installing restarts Craftparty."
-          : "Leave your parties first — installing restarts Craftparty.",
+          ? "Leave the party first. Installing restarts Craftparty."
+          : "Leave your parties first. Installing restarts Craftparty.",
     };
   }
   installNow();
@@ -298,7 +298,7 @@ ipcMain.handle("open-marketplace", () => {
   return { ok: true };
 });
 
-// Sponsoring happens on github.com, in the browser — Craftparty never
+// Sponsoring happens on github.com, in the browser. Craftparty never
 // sees a payment, and deliberately has no account of its own to ask for.
 ipcMain.handle("open-sponsors", () => {
   shell.openExternal(SPONSORS_URL);
@@ -333,7 +333,7 @@ ipcMain.handle("delete-world", async (_event, worldId: string) => {
   try {
     const world = await getWorld(worldId);
     if (party?.world.id === world.id) {
-      return { error: "That world is running right now — stop the party first." };
+      return { error: "That world is running right now. Stop the party first." };
     }
     const { response } = await dialog.showMessageBox(win!, {
       type: "warning",
@@ -384,7 +384,7 @@ ipcMain.handle(
 
     // Explicit either way: resuming and creating are never confused, so a
     // typo can't silently strand a world the host meant to resume. This
-    // runs before the start proper — a name clash is something for the
+    // runs before the start proper, and a name clash is something for the
     // host to fix, not a failure worth a diagnostic report.
     let world;
     let worldConfig;
@@ -398,7 +398,7 @@ ipcMain.handle(
       } else {
         // A new world is pinned to today's newest hostable Minecraft and
         // keeps it for good; a saved one already has its own. Fabric
-        // being unreachable isn't fatal — the world is created unpinned
+        // being unreachable isn't fatal: the world is created unpinned
         // and stamped with whatever the start actually runs.
         const version = await latestSupportedMinecraft().catch(() => null);
         world = await createWorld(opts.worldName ?? "", version);
@@ -474,7 +474,7 @@ ipcMain.handle("stop-party", async () => {
 /**
  * Connect to one saved party. Joining probes for free loopback ports
  * (the SOCKS proxy, then the one Minecraft dials), and two of those
- * racing would happily pick the same number — so connections take turns,
+ * racing would happily pick the same number, so connections take turns,
  * and while one is in flight nothing else may claim the phase channel
  * the progress screen reads.
  */
@@ -485,7 +485,7 @@ async function connectToParty(saved: JoinedParty) {
   if (starting) {
     // `starting` is held by a host start too, not just another join.
     return {
-      error: "Hang on — Craftparty is still getting another world ready.",
+      error: "Hang on, Craftparty is still getting another world ready.",
     };
   }
   starting = true;
@@ -545,7 +545,7 @@ ipcMain.handle("rejoin-party", async (_event, partyId: string) => {
 
 // Every party the friend has joined, connected or not. Deliberately
 // without the invite code: it carries the host's auth key, and nothing
-// in the renderer needs it — rejoining goes by id.
+// in the renderer needs it. Rejoining goes by id.
 ipcMain.handle("list-parties", async () => {
   try {
     const parties = await listParties();
@@ -581,7 +581,7 @@ ipcMain.handle("check-party", async (_event, partyId: string) => {
   }
 });
 
-// Leaving one party, or (with no id — the shutdown path) all of them.
+// Leaving one party, or (with no id, the shutdown path) all of them.
 ipcMain.handle("leave-party", async (_event, partyId?: string) => {
   const ids = partyId ? [partyId] : [...joins.keys()];
   for (const id of ids) {
@@ -595,7 +595,7 @@ ipcMain.handle("leave-party", async (_event, partyId?: string) => {
   return { ok: true };
 });
 
-// Forgetting only removes the party from the list — nothing on this
+// Forgetting only removes the party from the list. Nothing on this
 // computer or the host's is touched. Being connected is the one thing
 // that blocks it; yanking someone out of a world they are playing is not
 // what "forget" should mean.
@@ -696,7 +696,7 @@ app.whenReady().then(() => {
             break;
           }
           if (state.error) {
-            console.error(`selftest: FAILED — ${state.error}`);
+            console.error(`selftest: FAILED: ${state.error}`);
             await shot("error");
             break;
           }
@@ -826,7 +826,7 @@ function armDualSelftest() {
       }
     } catch (err) {
       console.error(
-        `selftest ${hostArg ? "host" : "join"}: FAILED —`,
+        `selftest ${hostArg ? "host" : "join"}: FAILED:`,
         err instanceof Error ? err.message : err,
       );
       app.exit(1);
@@ -837,8 +837,8 @@ function armDualSelftest() {
 app.whenReady().then(armDualSelftest);
 
 /**
- * Never leave a world behind on the way out. Both exits — closing the
- * window and quitting outright (Cmd+Q, the dock, a session logout) — stop
+ * Never leave a world behind on the way out. Both exits, closing the
+ * window and quitting outright (Cmd+Q, the dock, a session logout), stop
  * the Minecraft server through its console `stop` first, so the world is
  * saved to disk instead of being orphaned and hard-killed on next launch.
  */
