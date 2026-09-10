@@ -3,7 +3,7 @@
   "id": "craftparty-stay-hydrated",
   "version": "${version}",
   "name": "Stay Hydrated",
-  "description": "A thirst meter for your party. Keep a water bottle in your offhand and take a sip now and then — sprinting and sunshine make you thirstier.",
+  "description": "A thirst meter for your party. Keep a water bottle in your offhand and take a sip now and then. Sprinting and sunshine make you thirstier.",
   "authors": ["Craftparty"],
   "contact": {
     "homepage": "https://craftparty-ten.vercel.app/marketplace"

@@ -1,7 +1,7 @@
 /*
  * A stand-in for the preload bridge (src/preload.ts), so the renderer can
  * be driven without a real party running. Used only by the screenshot
- * capture — never bundled into the app.
+ * capture. It is never bundled into the app.
  *
  * Query string picks the scene: ?s=running|join, ?net=<verdict>,
  * ?worlds=N, ?parties=N.
@@ -80,8 +80,8 @@ window.craftparty = {
   openSponsors: async () => {},
   openWebsite: async () => {},
   updateState: async () => ({
-    currentVersion: "0.8.0",
-    latestVersion: "0.8.0",
+    currentVersion: "0.9.0",
+    latestVersion: "0.9.0",
     status: P.get("update") ?? "current",
     autoUpdate: true,
     selfInstall: true,

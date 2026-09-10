@@ -3,9 +3,9 @@ import Link from "next/link";
 import { ADDONS } from "../../lib/addons";
 
 export const metadata: Metadata = {
-  title: "Craftparty Marketplace — addons for your world",
+  title: "Craftparty Marketplace: addons for your world",
   description:
-    "Free addons for Craftparty worlds. The host picks them when starting a world — friends join with completely vanilla Minecraft.",
+    "Free addons for Craftparty worlds. The host picks them when starting a world, and friends join with completely vanilla Minecraft.",
 };
 
 export default function Marketplace() {
@@ -27,7 +27,7 @@ export default function Marketplace() {
             <h1>The Marketplace</h1>
             <p className="lede">
               Free addons that make your world more fun. Pick them in the
-              Craftparty app when you start your world — they run on the
+              Craftparty app when you start your world. They run on the
               host&apos;s side, so your friends don&apos;t install anything.
               Everyone keeps playing with completely vanilla Minecraft.
             </p>
@@ -66,7 +66,7 @@ export default function Marketplace() {
             <h3>How addons work</h3>
             <p>
               When you host a party, the Craftparty app shows this list under
-              <strong> Addons</strong> — tick the ones you want and start your
+              <strong> Addons</strong>. Tick the ones you want and start your
               world. The app installs them into that world automatically, and
               unticking them removes them next time.
             </p>
@@ -75,7 +75,7 @@ export default function Marketplace() {
               don&apos;t need to install anything at all.
             </p>
             <p className="fineprint">
-              Building something fun for parties? The marketplace is young —
+              Building something fun for parties? The marketplace is young, so
               <a href="https://github.com/marclundgren/craftparty"> open an issue on GitHub</a> and
               let&apos;s add your addon.
             </p>
