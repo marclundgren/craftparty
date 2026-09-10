@@ -107,13 +107,22 @@ export interface PartyHandle {
  * Boot a complete party: control plane (Independent) or shared control
  * plane (Assisted), join the tailnet, start Minecraft, emit the invite.
  *
- * NOTE (Independent mode, current state): remote=false is fully working
- * (LAN/local). remote=true exposes the control plane via UPnP and is
- * VERIFIED REACHABLE over the public URL, but the tailscale client
- * refuses plain-http control planes on non-loopback addresses (it forces
- * an https dial after the first noise connection), so remote needs the
- * TLS layer (headscale built-in Let's Encrypt + sslip.io hostname +
- * external 443 mapping) before it works end to end.
+ * Independent + remote=true is the internet path, and it works end to end
+ * — external 443 mapped to the control plane, a Let's Encrypt cert for an
+ * IP-derived sslip.io hostname, friends dialing that https URL. It rests
+ * on four conditions, and only the first is checked before we commit to
+ * the attempt:
+ *
+ * - A public, non-CGNAT address behind a UPnP-capable router.
+ *   exposePort() proves this and fails with the reason if not.
+ * - Inbound 443 actually reaching the router. Nothing inside the house
+ *   can prove this; an ISP that blocks it looks like ACME never finishing.
+ * - NAT hairpin, because the host's own tailscaled dials the public
+ *   hostname exactly like a friend does. A router that won't loop traffic
+ *   back to itself fails the HOST's up(), while friends would be fine.
+ * - Room in sslip.io's Let's Encrypt budget, which is global: sslip.io is
+ *   not on the Public Suffix List, so every user of it worldwide shares
+ *   one registered-domain rate limit. It has been exhausted before.
  */
 export async function startParty(opts: PartyOptions): Promise<PartyHandle> {
   const phase = (p: string) => opts.onPhase?.(p);

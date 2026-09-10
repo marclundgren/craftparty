@@ -8,9 +8,13 @@
  *
  * Run: node host-engine/src/party-smoke.ts [--verbose] [--remote]
  *
- * --remote: auto-expose the control plane via UPnP and hand the friend a
- * PUBLIC http://<public-ip>:<port> control-plane URL (exercises the full
- * zero-infra remote path; needs a router with hairpin NAT to self-test).
+ * --remote: auto-expose the control plane via UPnP on external 443 and
+ * hand the friend a PUBLIC https://<public-ip-dashed>.sslip.io URL with a
+ * real Let's Encrypt cert (exercises the full zero-infra remote path).
+ * Both sides run here, so self-testing needs a router with hairpin NAT —
+ * as does a real host, whose own tailscaled dials that same public URL.
+ * Set CRAFTPARTY_ACME_URL to the LE staging CA to avoid spending
+ * production issuance budget while iterating.
  */
 import net from "node:net";
 import { startParty, decodeInvite } from "./party.ts";
