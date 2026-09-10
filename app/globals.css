@@ -143,13 +143,17 @@ a {
   max-width: 40rem;
 }
 
-/* Framed like the cards further down the page, so it reads as a window
-   standing in the sky rather than a screenshot pasted over it. */
-.hero-shot {
+/* Framed like the cards further down the page, so they read as two
+   windows standing in the sky rather than screenshots pasted over it.
+   Both are captured at the same size, so they sit level in a pair. */
+.hero-shots {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+  gap: 1.5rem;
   margin-top: 2.75rem;
 }
 
-.hero-shot img {
+.hero-shots img {
   display: block;
   width: 100%;
   height: auto;

@@ -1,10 +1,11 @@
 import Image from "next/image";
 import Link from "next/link";
 import DownloadButton, { RELEASES_URL } from "./download-button";
-// A real capture of the app, taken through Electron itself. See the
-// capture script in the repo's tooling. Statically imported so Next knows
-// its dimensions and the hero never shifts while it loads.
-import appShot from "./craftparty-app.png";
+// Real captures of the app, taken through Electron itself by
+// host-app/screenshots/capture.cjs. Statically imported so Next knows
+// their dimensions and the hero never shifts while they load.
+import hostShot from "./craftparty-host.png";
+import joinShot from "./craftparty-join.png";
 
 const SPONSORS_URL = "https://github.com/sponsors/marclundgren";
 
@@ -56,13 +57,20 @@ export default function Home() {
                 own Minecraft Java Edition
               </p>
             </div>
-            {/* The whole app, actual size. A download page should show
-                what you are downloading. */}
-            <div className="hero-shot">
+            {/* The two screens a new person meets, as the app looks on a
+                fresh install. A download page should show what you are
+                downloading. */}
+            <div className="hero-shots">
               <Image
-                src={appShot}
-                alt="The Craftparty app with a world called “subi hc” running, showing the address to connect to and an invite code to send to friends."
-                sizes="(max-width: 64rem) 92vw, 60rem"
+                src={hostShot}
+                alt="The Host a craftparty screen: name your world, pick a difficulty and seed, and press Start my world."
+                sizes="(max-width: 40rem) 92vw, 30rem"
+                priority
+              />
+              <Image
+                src={joinShot}
+                alt="The Join a craftparty screen: paste the invite your friend sent you and press Join the party."
+                sizes="(max-width: 40rem) 92vw, 30rem"
                 priority
               />
             </div>

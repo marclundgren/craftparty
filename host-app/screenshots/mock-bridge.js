@@ -3,8 +3,9 @@
  * be driven without a real party running. Used only by the screenshot
  * capture. It is never bundled into the app.
  *
- * Query string picks the scene: ?s=running|join, ?net=<verdict>,
- * ?worlds=N, ?parties=N.
+ * Query string picks the scene: ?s=host|join|running, ?net=<verdict>,
+ * ?worlds=N, ?parties=N. With no ?s the host form is shown as it is on
+ * first launch.
  */
 (() => {
 // Stub of the preload bridge, for laying the UI out in a browser.
@@ -13,7 +14,7 @@ const N = (k, d) => Number(P.get(k) ?? d);
 
 const worlds = Array.from({ length: N("worlds", 3) }, (_, i) => ({
   id: `world-${i}`,
-  name: ["subi hc", "Dragon Cave", "Skyblock Redux", "Test", "Old One", "Sixth"][i] ?? `World ${i}`,
+  name: ["Castle Hill", "Dragon Cave", "Skyblock Redux", "Test", "Old One", "Sixth"][i] ?? `World ${i}`,
   lastPlayedAt: new Date(Date.now() - i * 86400000).toISOString(),
   sizeBytes: 12_000_000 * (i + 1),
   minecraftVersion: "26.2",
@@ -57,7 +58,7 @@ window.craftparty = {
   startParty: async () => ({
     inviteCode: "eyJ2IjoxLCJwYXJ0eSI6IjhmM2EiLCJrZXkiOiJhYmNkZWZnaGlqa2xtbm9wIn0",
     port: 25565,
-    worldName: "subi hc",
+    worldName: "Castle Hill",
     remote: true,
     minecraftVersion: "26.2",
   }),
@@ -106,7 +107,7 @@ addEventListener("load", () => {
       eula.checked = true;
       eula.dispatchEvent(new Event("change"));
       const name = document.getElementById("world-name");
-      name.value = "subi hc";
+      name.value = "Castle Hill";
       name.dispatchEvent(new Event("input"));
       document.getElementById("start").click();
     }
