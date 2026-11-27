@@ -21,22 +21,33 @@ const PORT = 4317;
 
 /**
  * Each picture the site uses. `zoom` renders the same layout at a higher
- * pixel density. The hero image is displayed wider than it is captured,
- * so at 1x it would be visibly soft.
+ * pixel density. The hero images are displayed wider than they are
+ * captured, so at 1x they would be visibly soft.
+ *
+ * The site shows the two screens a new person meets, both as they look on
+ * a fresh install: no saved worlds, no remembered parties. Nothing here is
+ * a real world of anyone's.
  */
 const SHOTS = [
   {
-    out: path.join(SITE, "craftparty-app.png"),
-    url: `http://localhost:${PORT}/?s=running`,
-    width: 900,
-    height: 680,
+    out: path.join(SITE, "craftparty-host.png"),
+    url: `http://localhost:${PORT}/?s=host&worlds=0`,
+    width: 760,
+    height: 1000,
     zoom: 2,
   },
   {
-    // Link previews. 1.9:1 is the shape social cards crop to, and it has
-    // to be tall enough that the running card doesn't have to scroll.
+    out: path.join(SITE, "craftparty-join.png"),
+    url: `http://localhost:${PORT}/?s=join&parties=0`,
+    width: 760,
+    height: 1000,
+    zoom: 2,
+  },
+  {
+    // Link previews. 1.9:1 is the shape social cards crop to. The join
+    // form is the one that fits that shape without scrolling.
     out: path.join(SITE, "opengraph-image.png"),
-    url: `http://localhost:${PORT}/?s=running`,
+    url: `http://localhost:${PORT}/?s=join&parties=0`,
     width: 1440,
     height: 756,
     zoom: 1,

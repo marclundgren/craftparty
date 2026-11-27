@@ -7,12 +7,16 @@ so they can't drift from it. Regenerate them whenever the UI changes:
 npm run screenshots
 ```
 
-(from `host-app/`). It writes two files:
+(from `host-app/`). It writes three files:
 
 | File | Used for |
 | --- | --- |
-| `app/craftparty-app.png` | the picture in the website's hero |
+| `app/craftparty-host.png` | the Host screen, in the website's hero |
+| `app/craftparty-join.png` | the Join screen, beside it |
 | `app/opengraph-image.png` | the link preview, via Next's `opengraph-image` file convention |
+
+Every scene is a fresh install with invented data. Nothing captured here
+is anyone's real world or invite.
 
 ## How it works
 
@@ -22,7 +26,7 @@ that isn't running. Electron then loads each scene offscreen, so nothing
 appears on your desktop, and writes the captured page to a PNG.
 
 Scenes are chosen with the query string the mock understands:
-`?s=running|join`, `?net=independent|independent-maybe|assisted|error`,
+`?s=host|join|running`, `?net=independent|independent-maybe|assisted|error`,
 `?worlds=N`, `?parties=N`. Add an entry to `SHOTS` in `capture.cjs` to
 capture another one.
 
